@@ -5,6 +5,10 @@ provides client methods to get data from KBC and put data back to KBC.
 
 ## Examples
 ```
+# install the package
+library(devtools)
+devtools::install_github("keboola/sapi-r-client")
+
 # create client
 client <- SapiClient$new(
     token = 'your-token'

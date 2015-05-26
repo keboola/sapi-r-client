@@ -242,7 +242,7 @@ SapiClient <- setRefClass(
         #' @param string fileName - temporary file name to write to. will be deleted
         #' @return boolean
         #' @exportMethod
-        saveTable = function(df, bucket, tableName, fileName, options=list()) {
+        saveTable = function(df, bucket, tableName, fileName="tmpfile.csv", options=list()) {
           write.csv(df, file=fileName, row.names=FALSE)
           fileId <- uploadFile(fileName)
           # start writing job

@@ -10,6 +10,7 @@ provides client methods to get data from KBC and put data back to KBC.
 # install the package
 library(devtools)
 devtools::install_github("keboola/sapi-r-client")
+library('keboola.sapi.r.client')
 
 # create client
 client <- SapiClient$new(

@@ -119,9 +119,10 @@ SapiClient <- setRefClass(
             })
             df <- do.call("rbind", df)
           } else {
-            # only redshift tables are supported for now
-            # 
-            stop("MySql backend is not supported yet")
+            # single file, so just get it
+            bucket <- fileInfo$s3Path$bucket
+            key <- fileInfo$s3Path$key
+            df <- s3GET(paste0("https://",bucket,".s3.amazonaws.com/",key), fileInfo$credentials, header=TRUE)
           }
           df
         },
@@ -226,10 +227,8 @@ SapiClient <- setRefClass(
                      add_headers("X-StorageApi-Token" = token),
                      body = opts)
               }, error = function(e) {
-                write(paste("Error posting file to sapi: ", e$message),stderr())
                 stop(paste("error posting fle to sapi", e))
               }, warning = function(w) {
-                write(paste("Save file warning recieved: ", w$message),stderr())
                 stop(paste("Save file warning recieved: ", w$message))
               }
             )
@@ -408,7 +407,7 @@ SapiClient <- setRefClass(
         #' @param string url - the url to GET
         #' @param list credentials - the temporary AWS credentials
         #' @return request body (should be data.frame)
-        s3GET = function(url, credentials) {
+        s3GET = function(url, credentials, header=FALSE) {
           region <- "us-east-1"
           current <- Sys.time()
           d_timestamp <- format(current, "%Y%m%dT%H%M%SZ", tz = "UTC")
@@ -437,7 +436,7 @@ SapiClient <- setRefClass(
           
           r <- GET(url, H)
           
-          read.csv(text=content(r,as="text"), header=FALSE)
+          read.csv(text=content(r,as="text"), header=header)
         },
         #' Check to see if a bucket exists
         #' 

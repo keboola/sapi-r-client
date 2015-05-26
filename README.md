@@ -1,5 +1,7 @@
 # KBC Storage R Client
 
+[![Build Status](https://travis-ci.org/keboola/sapi-r-client.svg?branch=master)](https://travis-ci.org/keboola/sapi-r-client)
+
 Client for using [Keboola Connection Storage API](http://docs.keboola.apiary.io/). This API client 
 provides client methods to get data from KBC and put data back to KBC.
 

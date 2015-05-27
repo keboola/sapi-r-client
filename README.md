@@ -2,15 +2,27 @@
 
 [![Build Status](https://travis-ci.org/keboola/sapi-r-client.svg?branch=master)](https://travis-ci.org/keboola/sapi-r-client)
 
-Client for using [Keboola Connection Storage API](http://docs.keboola.apiary.io/). This API client 
-provides client methods to get data from KBC and put data back to KBC.
+Client for using [Keboola Connection Storage API](http://docs.keboola.apiary.io/). 
+This API client provides client methods to get data from KBC and put data back to KBC.
 
 ## Examples
 ```
-# install the package
+# installation
+# first need to install the devtools package if it isn't already installed
+install.packages("devtools")
+# load the library
 library(devtools)
+
+# this package relies on another github package 
+# for aws request signature generation
+devtools::install_github("cloudyr/aws.signature")
+
+# install the sapi client package
 devtools::install_github("keboola/sapi-r-client")
 library('keboola.sapi.r.client')
+
+# load the library (dependencies will be loaded automatically)
+library(keboola.sapi.r.client)
 
 # create client
 client <- SapiClient$new(
@@ -24,7 +36,7 @@ tokenDetails <- client$verifyToken()
 bucket <- client$createBucket("new_bucket","in","A brand new Bucket!")
 
 # create a table
-table <- client$saveTable(bucket$id,"new_table","tmpfile.csv")
+table <- client$saveTable(bucket$id,"new_table")
 
 # import a table
 mydata <- client$importTable('in.c-my_bucket.my_table')

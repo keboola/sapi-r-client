@@ -24,6 +24,13 @@ SapiClient <- setRefClass(
             token <<- token
             url <<- url
             userAgent <<- userAgent
+            # check for token validity
+            tryCatch(
+            {  
+              vf <- .self$verifyToken()
+            }, error = function(e) {
+              stop("Invalid Access Token")
+            })
         },
 
         #' Internal method to process API response

@@ -1,3 +1,4 @@
+# Fill valid database connection parameters and copy this file to config.R 
 # replace "your_token" with your keboola connection project token
 # or set environment variable TEST_TOKEN with your token string
 

@@ -38,7 +38,7 @@ SapiClient <- setRefClass(
         #' @return response body - either list or string in case the body cannot be parsed as JSON.
         decodeResponse = function(response) {
             # decode response
-            content <- content(response, as = "text")
+            content <- httr::content(response, as = "text")
             body <- NULL
             tryCatch({
                 body <- jsonlite::fromJSON(content, simplifyVector = FALSE)
@@ -74,6 +74,7 @@ SapiClient <- setRefClass(
         get = function(url, query = list()) {
             GET(url, add_headers("X-StorageApi-Token" = token, "User-Agent" = userAgent), query = query)
         },
+        
         #' internal helper for parsing options
         #' 
         #' @param list options
@@ -87,6 +88,7 @@ SapiClient <- setRefClass(
           }
           opts
         },
+        
         #' get details of the token
         #'
         #' @return list object containing details of this client's token
@@ -94,6 +96,7 @@ SapiClient <- setRefClass(
         verifyToken = function() {
             decodeResponse(get(paste0(url,"storage/tokens/verify")))
         },
+        
         #' make a status request to an async syrup job
         #' 
         #' @param url - this will normally be the url returned from the createTableAsync/importTableAsync methods
@@ -101,6 +104,7 @@ SapiClient <- setRefClass(
         getJobStatus = function(url) {
           decodeResponse(get(url))
         },
+        
         #' return info about the file, including credentials
         #' 
         #' @param string fileId
@@ -108,6 +112,7 @@ SapiClient <- setRefClass(
         getFileInfo = function(fileId, federationToken = TRUE) {
           decodeResponse(get(paste0(url,"storage/files/", fileId), query=list(federationToken=federationToken)))
         },
+        
         #' get a file from the s3 storage
         #' 
         #' @param list fileInfo object
@@ -133,6 +138,7 @@ SapiClient <- setRefClass(
           }
           df
         },
+        
         #' Upload a file to AWS S3 bucket 
         #' (compression is not yet supported by this client)
         #' 
@@ -181,6 +187,7 @@ SapiClient <- setRefClass(
           # return the file id of the uploaded file
           resp$id
         },
+        
         #' Create/Overwrite a new table in a bucket ascynchronously
         #'
         #' @param bucket
@@ -215,8 +222,9 @@ SapiClient <- setRefClass(
                 stop(paste("warning recieved creating table:", w$message))
               }
             )
-          content(resp)
+          httr::content(resp)
         },
+        
         #' Begin an export job of a table.
         #' 
         #' @param string table identifier
@@ -234,13 +242,14 @@ SapiClient <- setRefClass(
                      add_headers("X-StorageApi-Token" = token),
                      body = opts)
               }, error = function(e) {
-                stop(paste("error posting fle to sapi", e))
+                stop(paste("error posting file to sapi", e))
               }, warning = function(w) {
                 stop(paste("Save file warning recieved: ", w$message))
               }
             )
-          content(response)
+          httr::content(response)
         },
+        
         #' wrapper for the saveTableAsync function call
         #' 
         #' @param data.frame data to save
@@ -269,6 +278,7 @@ SapiClient <- setRefClass(
           file.remove(fileName)
           job$results$id
         },
+        
         #' import table into your R session
         #' this is a wrapper function
         #' 
@@ -298,6 +308,7 @@ SapiClient <- setRefClass(
           names(df) <- columns
           df
         },
+        
         #' get a list of all buckets
         #' 
         #' @param list of query parameters
@@ -313,6 +324,7 @@ SapiClient <- setRefClass(
             }
             body
         },
+        
         #'  Get a list of all tables
         #'  
         #'  @param (optional) string bucket - the bucket id whose tables to get
@@ -335,6 +347,7 @@ SapiClient <- setRefClass(
             }
             body
         },
+        
         #' Get table information
         #' 
         #' @param string table identifier
@@ -343,6 +356,7 @@ SapiClient <- setRefClass(
         getTable = function(tableId) {
           decodeResponse(get(paste0(url,"storage/tables/",tableId)))
         },
+        
         #' Get bucket information
         #' 
         #' @param string bucket identifier
@@ -351,6 +365,7 @@ SapiClient <- setRefClass(
         getBucket = function(bucketId) {
           decodeResponse(get(paste0(url,"storage/buckets/",bucketId)))
         },
+        
         #' Create a new bucket
         #' 
         #' @param string name of the bucket
@@ -380,6 +395,7 @@ SapiClient <- setRefClass(
             )
           decodeResponse(resp)
         },
+        
         #' delete a bucket
         #' 
         #' @param string the id of the bucket to delete
@@ -394,6 +410,7 @@ SapiClient <- setRefClass(
             TRUE
           }
         },
+        
         #' delete a table
         #'
         #' @param string the id of the table
@@ -409,6 +426,7 @@ SapiClient <- setRefClass(
             TRUE
           }
         },
+        
         #' AWS GET method (uses aws.signature package to compose the signature)
         #' 
         #' @param string url - the url to GET
@@ -443,7 +461,7 @@ SapiClient <- setRefClass(
           
           r <- GET(url, H)
           
-          read.csv(text=content(r,as="text"), header=header)
+          read.csv(text = httr::content(r, as="text"), header=header)
         },
         #' Check to see if a bucket exists
         #' 

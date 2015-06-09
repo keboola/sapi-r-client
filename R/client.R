@@ -303,7 +303,7 @@ SapiClient <- setRefClass(
           }else {
             columns <- table$columns
           }
-          fileInfo <- getFileInfo(job$result$file$id)
+          fileInfo <- getFileInfo(job$result$file$id)          
           df <- getFileData(fileInfo)
           names(df) <- columns
           df
@@ -451,7 +451,8 @@ SapiClient <- setRefClass(
                                      `x-amz-security-token` = credentials$SessionToken),
             request_body = "",
             key = credentials$AccessKeyId, 
-            secret = credentials$SecretAccessKey)
+            secret = credentials$SecretAccessKey
+          )
           headers$`x-amz-date` <- d_timestamp
           headers$`x-amz-content-sha256` <- Sig$BodyHash
           headers$Authorization <- Sig$SignatureHeader
@@ -460,8 +461,8 @@ SapiClient <- setRefClass(
           H <- do.call(add_headers, headers)
           
           r <- GET(url, H)
-          
-          read.csv(text = httr::content(r, as="text"), header=header)
+                    
+          read.csv(text = httr::content(r, as="text"), header=header, colClasses = "character")
         },
         #' Check to see if a bucket exists
         #' 

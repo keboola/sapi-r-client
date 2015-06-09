@@ -91,7 +91,9 @@ test_that("createAndDeleteMethods", {
   verifyBucketStructure(result)
   
   # create a table in our new bucket
-  df <- data.frame(colA = 1:5, colB = 5:1)
+  
+  colC <- c("99786952", "109597927.109599284", "109611185.109612267", "109783546.109790316", "110305160.110305730")
+  df <- data.frame(colA = 1:5, colB = 5:1, colC = colC)
   tableId <- client$saveTable(df, result$id, "test_table", "tmpfile.csv")
   
   #successfully saved the table.  retrieve it
@@ -99,10 +101,13 @@ test_that("createAndDeleteMethods", {
   verifyTableStructure(tbl)
   
   #import the data back into R session
-  df <- client$importTable(tbl$id, options=list(limit=3))
+  df <- client$importTable(tbl$id, options = list(limit = 3))
   
   expect_equal(nrow(df), 3)
-  expect_equal(c("colA", "colB"),names(df))
+  expect_equal(c("colA", "colB", 'colC'), names(df))
+
+  df <- client$importTable(tbl$id)
+  expect_equal(sort(df$colC), sort(colC))
   
   # delete the table
   dt <- client$deleteTable(tbl$id)

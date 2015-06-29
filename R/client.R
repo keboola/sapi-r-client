@@ -81,10 +81,17 @@ SapiClient <- setRefClass(
         #' @return list options
         prepareOptions = function(options) {
           # which parameters aree allowed
-          params <- c("limit","changedSince","changedUntil")
+          params <- c("limit","changedSince","changedUntil","whereColumn","whereValues")
           opts <- options[names(options) %in% params]
           if ("columns" %in% names(options)) {
             opts[["columns"]] <- paste(options[["columns"]], collapse=",")
+          }
+          if ("whereValues" %in% names(options)) {
+            i <- 0
+            for (val in options["whereValues"]) {
+              opts[[paste0("whereValues[",i,"]")]] = val  
+              i <- i + 1
+            }  
           }
           opts
         },
@@ -239,7 +246,7 @@ SapiClient <- setRefClass(
             tryCatch(
               {
                 POST(paste0(url,"storage/tables/", tableId, "/export-async"),
-                     add_headers("X-StorageApi-Token" = token),
+                     add_headers("X-StorageApi-Token" = token, "User-Agent" = userAgent),
                      body = opts)
               }, error = function(e) {
                 stop(paste("error posting file to sapi", e))

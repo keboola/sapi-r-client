@@ -36,7 +36,7 @@ tokenDetails <- client$verifyToken()
 bucket <- client$createBucket("new_bucket","in","A brand new Bucket!")
 
 # create a table
-table <- client$saveTable(bucket$id,"new_table")
+table <- client$saveTable(myDataFrame, bucket$id, "new_table")
 
 # import a table
 mydata <- client$importTable('in.c-my_bucket.my_table')

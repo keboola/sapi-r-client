@@ -41,9 +41,9 @@ SapiClient <- setRefClass(
             content <- httr::content(response, as = "text")
             body <- NULL
             tryCatch({
-                body <- jsonlite::fromJSON(content, simplifyVector = FALSE)
+              body <- jsonlite::fromJSON(content, simplifyVector = FALSE)
             }, error = function (e) {
-              stop(paste("wtf is this?", e$message))
+              stop(paste("Error parsing JSON response:", e$message))
             })
             if (is.null(body)) {
                 # failed to parse body as JSON
@@ -294,26 +294,32 @@ SapiClient <- setRefClass(
         #' @return dataframe
         #' @exportMethod
         importTable = function(tableId, options=list()) {
-          res <- importTableAsync(tableId, options=options)
-          repeat {
-            job <- getJobStatus(res$url)
-            if (job$status == "success") {
-              break
-            } else if (job$status != "waiting" && job$status != "processing") {
-              stop(paste("Unexpected Job status:", job$status))
+          tryCatch({
+            res <- importTableAsync(tableId, options=options)  
+            repeat {
+              job <- getJobStatus(res$url)
+              if (job$status == "success") {
+                break
+              } else if (job$status != "waiting" && job$status != "processing") {
+                stop(paste("Unexpected Job status:", job$status))
+              }
+              Sys.sleep(0.5)
             }
-            Sys.sleep(0.5)
-          }
-          table <- getTable(tableId)
-          if ("columns" %in% names(options)) {
-            columns <- options$columns
-          }else {
-            columns <- table$columns
-          }
-          fileInfo <- getFileInfo(job$result$file$id)          
-          df <- getFileData(fileInfo)
-          names(df) <- columns
-          df
+            table <- getTable(tableId)
+            if ("columns" %in% names(options)) {
+              columns <- options$columns
+            }else {
+              columns <- table$columns
+            }
+            fileInfo <- getFileInfo(job$result$file$id)          
+            df <- getFileData(fileInfo)
+            names(df) <- columns
+            df
+          }, error = function(e) {
+            stop(paste("There was an error importing the table:", tableId,
+                       "Please make sure it a correct tableID, and that this token:", token, 
+                       "has read access."))
+          })  
         },
         
         #' get a list of all buckets

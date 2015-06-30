@@ -1,6 +1,6 @@
 #' Client for working with Keboola Connection Storage API.
 #'
-#' @import httr methods aws.signature
+#' @import httr methods aws.signature XML
 #' @exportClass SapiClient
 #' @export SapiClient
 SapiClient <- setRefClass(

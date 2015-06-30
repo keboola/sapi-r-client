@@ -21,9 +21,9 @@ SapiClient <- setRefClass(
                 url = 'https://connection.keboola.com/v2/',
                 userAgent = "Keboola StorageApi R Client/v2"
         ) {
-            token <<- token
-            url <<- url
-            userAgent <<- userAgent
+            .self$token <<- token
+            .self$url <<- url
+            .self$userAgent <<- userAgent
             # check for token validity
             tryCatch(
             {  
@@ -71,8 +71,12 @@ SapiClient <- setRefClass(
         #' @param url
         #' @param query - list of query arguments ex. list(foo = bar)
         #' @return list - the response object
-        get = function(url, query = list()) {
-            GET(url, add_headers("X-StorageApi-Token" = token, "User-Agent" = userAgent), query = query)
+        get = function(urlG, query = NULL) {
+            if (class(query) == 'list') && (length(query) == 0) {
+                # if query is an empty list, convert it to NULL, otherwise httr::GET will botch the request
+                query <- NULL
+            }
+            httr::GET(urlG, add_headers("X-StorageApi-Token" = .self$token, "User-Agent" = .self$userAgent), query = query)
         },
         
         #' internal helper for parsing options
@@ -101,7 +105,7 @@ SapiClient <- setRefClass(
         #' @return list object containing details of this client's token
         #' @exportMethod
         verifyToken = function() {
-            decodeResponse(get(paste0(url,"storage/tokens/verify")))
+            .self$decodeResponse(.self$get(paste0(.self$url,"storage/tokens/verify")))
         },
         
         #' make a status request to an async syrup job
@@ -109,7 +113,7 @@ SapiClient <- setRefClass(
         #' @param url - this will normally be the url returned from the createTableAsync/importTableAsync methods
         #' @return list - job details body 
         getJobStatus = function(url) {
-          decodeResponse(get(url))
+            .self$decodeResponse(.self$get(url))
         },
         
         #' return info about the file, including credentials
@@ -117,7 +121,7 @@ SapiClient <- setRefClass(
         #' @param string fileId
         #' @return list fileInfo object
         getFileInfo = function(fileId, federationToken = TRUE) {
-          decodeResponse(get(paste0(url,"storage/files/", fileId), query=list(federationToken=federationToken)))
+            .self$decodeResponse(.self$get(paste0(url,"storage/files/", fileId), query=list(federationToken=federationToken)))
         },
         
         #' get a file from the s3 storage
@@ -126,7 +130,7 @@ SapiClient <- setRefClass(
         #' @return file contents
         getFileData = function(fileInfo) {
           if (fileInfo$isSliced) {
-            manifest <- decodeResponse(get(fileInfo$url))
+            manifest <- .self$decodeResponse(.self$get(fileInfo$url))
             df <- 
               lapply(seq_along(manifest$entries), function(x) {
                 fullPath <- manifest$entries[[x]]$url
@@ -134,14 +138,14 @@ SapiClient <- setRefClass(
                 fileKey <-  paste(splittedPath[[1]][4:length(splittedPath[[1]])], collapse="/")
                 bucket <- fileInfo$s3Path$bucket
                 # get the chunk from S3
-                s3GET(paste0("https://",bucket,".s3.amazonaws.com/",fileKey), fileInfo$credentials)
+                .self$s3GET(paste0("https://",bucket,".s3.amazonaws.com/",fileKey), fileInfo$credentials)
             })
             df <- do.call("rbind", df)
           } else {
             # single file, so just get it
             bucket <- fileInfo$s3Path$bucket
             key <- fileInfo$s3Path$key
-            df <- s3GET(paste0("https://",bucket,".s3.amazonaws.com/",key), fileInfo$credentials, header=TRUE)
+            df <- .self$s3GET(paste0("https://",bucket,".s3.amazonaws.com/",key), fileInfo$credentials, header=TRUE)
           }
           df
         },
@@ -158,9 +162,9 @@ SapiClient <- setRefClass(
           }
           resp <- tryCatch(
             {  
-              decodeResponse(
-                      POST(paste0(url,"storage/files/prepare"),
-                         add_headers("X-StorageApi-Token" = token),
+                .self$decodeResponse(
+                      httr::POST(paste0(.self$url,"storage/files/prepare"),
+                         add_headers("X-StorageApi-Token" = .self$token),
                          body = options)
               )
             }, error = function(e) {
@@ -184,7 +188,7 @@ SapiClient <- setRefClass(
           res <- 
             tryCatch(
               {
-                POST(uploadParams$url, body=body)
+                httr::POST(uploadParams$url, body=body)
               }, error = function(e) {
                 stop(paste("error uploading file", e))
               }, warning = function(w) {
@@ -204,7 +208,7 @@ SapiClient <- setRefClass(
         #' @param (optional) list - additional parameters
         #' @return string - URL to ping for table creation status check
         saveTableAsync = function(bucket, tableName, fileId, opts = list()) {
-          posturl <- paste(url,"storage/buckets/", bucket, "/tables-async", sep="")
+          posturl <- paste(.self$url,"storage/buckets/", bucket, "/tables-async", sep="")
           
           #prepare our options
           options = list(
@@ -221,7 +225,7 @@ SapiClient <- setRefClass(
           resp <-
             tryCatch( 
               {
-                POST(posturl,add_headers("X-StorageApi-Token" = token),
+                httr::POST(posturl,add_headers("X-StorageApi-Token" = .self$token),
                      body = options)
               }, error = function(e) {
                 stop(paste("error creating table", e))
@@ -238,15 +242,15 @@ SapiClient <- setRefClass(
         #' @param options allowable query parameters
         #' @return list containing info of the job.  Contains url to check status
         importTableAsync = function(tableId, options=list()) {
-          opts <- prepareOptions(options)
+          opts <- .self$prepareOptions(options)
           if (!("federationToken" %in% names(opts))) {
             opts$federationToken = TRUE
           }
           response <- 
             tryCatch(
               {
-                POST(paste0(url,"storage/tables/", tableId, "/export-async"),
-                     add_headers("X-StorageApi-Token" = token, "User-Agent" = userAgent),
+                  httr::POST(paste0(.self$url,"storage/tables/", tableId, "/export-async"),
+                     add_headers("X-StorageApi-Token" = .self$token, "User-Agent" = .self$userAgent),
                      body = opts)
               }, error = function(e) {
                 stop(paste("error posting file to sapi", e))
@@ -267,11 +271,11 @@ SapiClient <- setRefClass(
         #' @exportMethod
         saveTable = function(df, bucket, tableName, fileName="tmpfile.csv", options=list()) {
           write.csv(df, file=fileName, row.names=FALSE)
-          fileId <- uploadFile(fileName)
+          fileId <- .self$uploadFile(fileName)
           # start writing job
-          res <- saveTableAsync(bucket, tableName, fileId, options)
+          res <- .self$saveTableAsync(bucket, tableName, fileId, options)
           repeat {
-            job <- getJobStatus(res$url)
+            job <- .self$getJobStatus(res$url)
             # check the job status
             if (job$status == "success") {
               break
@@ -295,12 +299,12 @@ SapiClient <- setRefClass(
         #' @exportMethod
         importTable = function(tableId, options=list()) {
           tryCatch({
-            res <- importTableAsync(tableId, options=options)  
+            res <- .self$importTableAsync(tableId, options=options)  
             if (!is.null(res$error)) {
               stop(paste("Error retrieving table:",res$error))
             }      
             repeat {
-              job <- getJobStatus(res$url)
+              job <- .self$getJobStatus(res$url)
               if (job$status == "success") {
                 break
               } else if (job$status != "waiting" && job$status != "processing") {
@@ -308,14 +312,14 @@ SapiClient <- setRefClass(
               }
               Sys.sleep(0.5)
             }
-            table <- getTable(tableId)
+            table <- .self$getTable(tableId)
             if ("columns" %in% names(options)) {
               columns <- options$columns
             }else {
               columns <- table$columns
             }
-            fileInfo <- getFileInfo(job$result$file$id)          
-            df <- getFileData(fileInfo)
+            fileInfo <- .self$getFileInfo(job$result$file$id)          
+            df <- .self$getFileData(fileInfo)
             names(df) <- columns
             df
           }, error = function(e) {
@@ -329,8 +333,8 @@ SapiClient <- setRefClass(
         #' @return list of buckets
         #' @exportMethod
         listBuckets = function(options = list()) {
-            resp <- get(paste(url,"storage/buckets",sep=""),options)
-            body <- decodeResponse(resp)
+            resp <- .self$get(paste(.self$url,"storage/buckets",sep=""),options)
+            body <- .self$decodeResponse(resp)
 
             if (class(body) != 'list') {
                 str <- print(body)
@@ -347,12 +351,12 @@ SapiClient <- setRefClass(
         #'  @exportMethod
         listTables = function(bucket = NULL, options = list()) {
             if (is.null(bucket)) {
-              body <- decodeResponse(
-                        get(paste0(url,"storage/tables"), options)  
-                      )
+              body <- .self$decodeResponse(
+                  .self$get(paste0(.self$url,"storage/tables"), options)  
+                )
             } else {
-              body <- decodeResponse(
-                        get(paste0(url,"storage/buckets/",bucket,"/tables"), options)  
+              body <- .self$decodeResponse(
+                  .self$get(paste0(.self$url,"storage/buckets/",bucket,"/tables"), options)  
                       )
             }
             if (class(body) != 'list') {
@@ -368,7 +372,7 @@ SapiClient <- setRefClass(
         #' @return list table details
         #' @exportMethod
         getTable = function(tableId) {
-          decodeResponse(get(paste0(url,"storage/tables/",tableId)))
+            .self$decodeResponse(.self$get(paste0(.self$url,"storage/tables/",tableId)))
         },
         
         #' Get bucket information
@@ -377,7 +381,7 @@ SapiClient <- setRefClass(
         #' @return list bucket details
         #' @exportMethod
         getBucket = function(bucketId) {
-          decodeResponse(get(paste0(url,"storage/buckets/",bucketId)))
+            .self$decodeResponse(.self$get(paste0(.self$url,"storage/buckets/",bucketId)))
         },
         
         #' Create a new bucket
@@ -398,8 +402,8 @@ SapiClient <- setRefClass(
           resp <-
             tryCatch(
             {
-              POST(paste0(url,"storage/buckets"), 
-                   add_headers("X-StorageApi-Token" = token),
+              httr::POST(paste0(.self$url,"storage/buckets"), 
+                   add_headers("X-StorageApi-Token" = .self$token),
                    body = options)
             }, error = function(e) {
               stop(paste("error posting fle to sapi", e))
@@ -407,7 +411,7 @@ SapiClient <- setRefClass(
               stop(paste("attempting save file warning recieved:", w$message))
             }
             )
-          decodeResponse(resp)
+          .self$decodeResponse(resp)
         },
         
         #' delete a bucket
@@ -416,8 +420,8 @@ SapiClient <- setRefClass(
         #' @return TRUE on success
         #' @exportMethod
         deleteBucket = function(bucketId) {
-          resp <- DELETE(paste0(url,"storage/buckets/",bucketId),
-                 add_headers("X-StorageApi-Token" = token))
+          resp <- httr::DELETE(paste0(.self$url,"storage/buckets/",bucketId),
+                 add_headers("X-StorageApi-Token" = .self$token))
           if (!(resp$status_code == 204)) {
             stop(paste0(resp$status_code, " Error deleting bucket ", bucketId))
           } else {
@@ -431,8 +435,8 @@ SapiClient <- setRefClass(
         #' @return TRUE on success
         #' @exportMethod
         deleteTable = function(tableId) {
-          resp <- DELETE(paste0(url,"storage/tables/", tableId),
-                         add_headers("X-StorageApi-Token" = token))
+          resp <- httr::DELETE(paste0(.self$url,"storage/tables/", tableId),
+                         add_headers("X-StorageApi-Token" = .self$token))
           
           if (!(resp$status_code == 204)) {
             stop(paste0(resp$status_code, " Error deleting table ", tableId))
@@ -453,7 +457,7 @@ SapiClient <- setRefClass(
           p <- parse_url(url)
           action <- if(p$path == "") "/" else paste0("/",p$path)
           headers <- list()
-          Sig <- signature_v4_auth(
+          Sig <- aws.signature::signature_v4_auth(
             datetime = d_timestamp,
             region = region,
             service = "s3",
@@ -484,7 +488,7 @@ SapiClient <- setRefClass(
         #' @return boolean
         #' @exportMethod
         bucketExists = function(bucketId) {
-          resp <- get(paste0(url,"storage/buckets/", bucketId))
+          resp <- .self$get(paste0(.self$url,"storage/buckets/", bucketId))
           if (resp$status_code == 404) FALSE
           else TRUE
         },
@@ -494,7 +498,7 @@ SapiClient <- setRefClass(
         #' @return boolean
         #' @exportMethod
         tableExists = function(tableId) {
-          resp <- get(paste0(url,"storage/tables/", tableId))
+          resp <- .self$get(paste0(.self$url,"storage/tables/", tableId))
           if (resp$status_code == 404) FALSE
           else TRUE
         }

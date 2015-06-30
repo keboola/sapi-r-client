@@ -296,6 +296,9 @@ SapiClient <- setRefClass(
         importTable = function(tableId, options=list()) {
           tryCatch({
             res <- importTableAsync(tableId, options=options)  
+            if (!is.null(res$error)) {
+              stop(paste("Error retrieving table:",res$error))
+            }      
             repeat {
               job <- getJobStatus(res$url)
               if (job$status == "success") {
@@ -316,9 +319,7 @@ SapiClient <- setRefClass(
             names(df) <- columns
             df
           }, error = function(e) {
-            stop(paste("There was an error importing the table:", tableId,
-                       "Please make sure it a correct tableID, and that this token:", token, 
-                       "has read access."))
+            stop(e$message)
           })  
         },
         

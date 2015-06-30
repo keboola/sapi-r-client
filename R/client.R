@@ -72,11 +72,11 @@ SapiClient <- setRefClass(
         #' @param query - list of query arguments ex. list(foo = bar)
         #' @return list - the response object
         get = function(urlG, query = NULL) {
-            if (class(query) == 'list') && (length(query) == 0) {
+            if ((class(query) == 'list') && (length(query) == 0)) {
                 # if query is an empty list, convert it to NULL, otherwise httr::GET will botch the request
                 query <- NULL
             }
-            httr::GET(urlG, add_headers("X-StorageApi-Token" = .self$token, "User-Agent" = .self$userAgent), query = query)
+            httr::GET(urlG, httr::add_headers("X-StorageApi-Token" = .self$token, "User-Agent" = .self$userAgent), query = query)
         },
         
         #' internal helper for parsing options
@@ -130,7 +130,8 @@ SapiClient <- setRefClass(
         #' @return file contents
         getFileData = function(fileInfo) {
           if (fileInfo$isSliced) {
-            manifest <- .self$decodeResponse(.self$get(fileInfo$url))
+            response <- httr::GET(fileInfo$url)
+            manifest <- .self$decodeResponse(response)
             df <- 
               lapply(seq_along(manifest$entries), function(x) {
                 fullPath <- manifest$entries[[x]]$url
@@ -164,8 +165,8 @@ SapiClient <- setRefClass(
             {  
                 .self$decodeResponse(
                       httr::POST(paste0(.self$url,"storage/files/prepare"),
-                         add_headers("X-StorageApi-Token" = .self$token),
-                         body = options)
+                        httr::add_headers("X-StorageApi-Token" = .self$token),
+                        body = options)
               )
             }, error = function(e) {
               stop(paste("error preparing file upload", e))
@@ -180,7 +181,7 @@ SapiClient <- setRefClass(
             signature = uploadParams$signature,
             policy = uploadParams$policy,
             AWSAccessKeyId = uploadParams$AWSAccessKeyId,
-            file = upload_file(dataFile)
+            file = httr::upload_file(dataFile)
           )
           if ("isEncrypted" %in% names(options)) {
             body$x-amz-server-side-encryption <- uploadParams$x-amz-server-side-encryption
@@ -225,7 +226,7 @@ SapiClient <- setRefClass(
           resp <-
             tryCatch( 
               {
-                httr::POST(posturl,add_headers("X-StorageApi-Token" = .self$token),
+                httr::POST(posturl,httr::add_headers("X-StorageApi-Token" = .self$token),
                      body = options)
               }, error = function(e) {
                 stop(paste("error creating table", e))
@@ -250,7 +251,7 @@ SapiClient <- setRefClass(
             tryCatch(
               {
                   httr::POST(paste0(.self$url,"storage/tables/", tableId, "/export-async"),
-                     add_headers("X-StorageApi-Token" = .self$token, "User-Agent" = .self$userAgent),
+                      httr::add_headers("X-StorageApi-Token" = .self$token, "User-Agent" = .self$userAgent),
                      body = opts)
               }, error = function(e) {
                 stop(paste("error posting file to sapi", e))
@@ -299,7 +300,7 @@ SapiClient <- setRefClass(
         #' @exportMethod
         importTable = function(tableId, options=list()) {
           tryCatch({
-            res <- .self$importTableAsync(tableId, options=options)  
+            res <- .self$importTableAsync(tableId, options=options)
             if (!is.null(res$error)) {
               stop(paste("Error retrieving table:",res$error))
             }      
@@ -403,7 +404,7 @@ SapiClient <- setRefClass(
             tryCatch(
             {
               httr::POST(paste0(.self$url,"storage/buckets"), 
-                   add_headers("X-StorageApi-Token" = .self$token),
+                    httr::add_headers("X-StorageApi-Token" = .self$token),
                    body = options)
             }, error = function(e) {
               stop(paste("error posting fle to sapi", e))
@@ -421,7 +422,7 @@ SapiClient <- setRefClass(
         #' @exportMethod
         deleteBucket = function(bucketId) {
           resp <- httr::DELETE(paste0(.self$url,"storage/buckets/",bucketId),
-                 add_headers("X-StorageApi-Token" = .self$token))
+                httr::add_headers("X-StorageApi-Token" = .self$token))
           if (!(resp$status_code == 204)) {
             stop(paste0(resp$status_code, " Error deleting bucket ", bucketId))
           } else {
@@ -436,7 +437,7 @@ SapiClient <- setRefClass(
         #' @exportMethod
         deleteTable = function(tableId) {
           resp <- httr::DELETE(paste0(.self$url,"storage/tables/", tableId),
-                         add_headers("X-StorageApi-Token" = .self$token))
+                    httr::add_headers("X-StorageApi-Token" = .self$token))
           
           if (!(resp$status_code == 204)) {
             stop(paste0(resp$status_code, " Error deleting table ", tableId))
@@ -476,7 +477,7 @@ SapiClient <- setRefClass(
           headers$Authorization <- Sig$SignatureHeader
           headers$`x-amz-security-token` <- credentials$SessionToken
           
-          H <- do.call(add_headers, headers)
+          H <- do.call(httr::add_headers, headers)
           
           r <- GET(url, H)
                     

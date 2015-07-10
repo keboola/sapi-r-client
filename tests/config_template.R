@@ -2,4 +2,4 @@
 # replace "your_token" with your keboola connection project token.
 
 KBC_TOKEN <- 'your_token'
-API_URL <- 'https://connection.keboola.com/v2/'
+KBC_URL <- 'https://connection.keboola.com/v2/'

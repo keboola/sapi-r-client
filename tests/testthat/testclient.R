@@ -32,8 +32,8 @@ verifyTableStructure <- function(table) {
 
 test_that("verifyToken", {
     client <- SapiClient$new(
-        token = apitoken,
-        url = apiUrl
+        token = KBC_TOKEN,
+        url = KBC_URL
     )
     tokenDetails <- client$verifyToken()
 
@@ -49,8 +49,8 @@ test_that("verifyToken", {
 
 test_that("listBuckets", {
   client <- SapiClient$new(
-    token = apitoken,
-    url = apiUrl
+    token = KBC_TOKEN,
+    url = KBC_URL
   )
   bucketlist <- client$listBuckets()
   
@@ -63,8 +63,8 @@ test_that("listBuckets", {
 
 test_that("listTables", {
   client <- SapiClient$new(
-    token = apitoken,
-    url = apiUrl
+    token = KBC_TOKEN,
+    url = KBC_URL
   )
   tablelist <- client$listTables("sys.c-shiny")
   expect_equal(1,length(tablelist))
@@ -76,8 +76,8 @@ test_that("listTables", {
 
 test_that("createAndDeleteMethods", {
   client <- SapiClient$new(
-    token = apitoken,
-    url = apiUrl
+    token = KBC_TOKEN,
+    url = KBC_URL
   )
   # check if our testing table and bucket exist, if so remove them
   if (client$bucketExists("in.c-r_client_testing")) {

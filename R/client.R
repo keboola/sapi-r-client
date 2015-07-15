@@ -91,11 +91,10 @@ SapiClient <- setRefClass(
             opts[["columns"]] <- paste(options[["columns"]], collapse=",")
           }
           if ("whereValues" %in% names(options)) {
-            i <- 0
-            for (val in options["whereValues"]) {
-              opts[[paste0("whereValues[",i,"]")]] = val  
-              i <- i + 1
-            }  
+            for (i in 1:length(options[["whereValues"]])) {
+              opts[[paste0("whereValues[",i-1,"]")]] <- options[["whereValues"]][i]  
+            } 
+            opts[["whereValues"]] <- NULL
           }
           opts
         },

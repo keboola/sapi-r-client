@@ -100,10 +100,10 @@ test_that("createAndDeleteMethods", {
   tbl <- client$getTable(tableId)
   verifyTableStructure(tbl)
   
-  #import the data back into R session
-  df <- client$importTable(tbl$id, options = list(limit = 3))
+  #import the data back into R session, test multiple where values
+  df <- client$importTable(tbl$id, options = list(whereColumn = "colA", whereValues = c("1","2","4")))
   
-  expect_equal(nrow(df), 3)
+  expect_equal(length(unique(df$colA)), 3)
   expect_equal(c("colA", "colB", 'colC'), names(df))
 
   df <- client$importTable(tbl$id)

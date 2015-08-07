@@ -274,6 +274,9 @@ SapiClient <- setRefClass(
           fileId <- .self$uploadFile(fileName)
           # start writing job
           res <- .self$saveTableAsync(bucket, tableName, fileId, options)
+          if (!is.null(res$error)) {
+            stop(paste0('Cannot save table ', bucket, '.', tableName, ' error:', res$error, ' (', res$exceptionId, ')'))
+          }
           repeat {
             job <- .self$getJobStatus(res$url)
             # check the job status
@@ -318,7 +321,7 @@ SapiClient <- setRefClass(
             }else {
               columns <- table$columns
             }
-            fileInfo <- .self$getFileInfo(job$result$file$id)          
+            fileInfo <- .self$getFileInfo(job$result$file$id)
             df <- .self$getFileData(fileInfo)
             names(df) <- columns
             df
@@ -450,11 +453,11 @@ SapiClient <- setRefClass(
         #' @param string url - the url to GET
         #' @param list credentials - the temporary AWS credentials
         #' @return request body (should be data.frame)
-        s3GET = function(url, credentials, header=FALSE) {
+        s3GET = function(url, credentials, header = FALSE) {
           region <- "us-east-1"
           current <- Sys.time()
           d_timestamp <- format(current, "%Y%m%dT%H%M%SZ", tz = "UTC")
-          p <- parse_url(url)
+          p <- httr::parse_url(url)
           action <- if(p$path == "") "/" else paste0("/",p$path)
           headers <- list()
           Sig <- aws.signature::signature_v4_auth(
@@ -478,9 +481,13 @@ SapiClient <- setRefClass(
           
           H <- do.call(httr::add_headers, headers)
           
-          r <- GET(url, H)
-                    
-          read.csv(text = httr::content(r, as="text"), header=header, colClasses = "character")
+          r <- httr::GET(url, H)
+          content <- httr::content(r, as="text")
+          if (content != '') {
+            read.csv(text = content, header=header, colClasses = "character")
+          } else {
+            data.frame()
+          }
         },
         #' Check to see if a bucket exists
         #' 

@@ -118,3 +118,64 @@ test_that("createAndDeleteMethods", {
 })
 
 
+test_that("oneRowTable", {
+  client <- SapiClient$new(
+    token = KBC_TOKEN,
+    url = KBC_URL
+  )
+  # check if our testing table and bucket exist, if so remove them
+  if (client$bucketExists("in.c-r_client_testing")) {
+    if (client$tableExists("in.c-r_client_testing.test_table")) {
+      client$deleteTable("in.c-r_client_testing.test_table")
+    }
+    client$deleteBucket("in.c-r_client_testing")
+  }
+  # make the bucket we will use for testing
+  result <- client$createBucket("r_client_testing","in","This bucket was created by the sapi R client test routine")
+  verifyBucketStructure(result)
+  
+  # create a table in our new bucket
+  df <- data.frame(ts_var = '201309', actual_value = '20348832.0000000000', expected_value = '15190371.0000000000', run_id = '130865113')
+  tableId <- client$saveTable(df, 'in.c-r_client_testing', 'test_table', 'tmpfile.csv')
+
+  #import the data back into R session, test multiple where values
+  df <- client$importTable(
+    tableId,
+    options = list(whereColumn = "run_id", whereValues = '130865113')
+  )
+  
+  expect_equal(length(df$ts_var), 1)
+  expect_equal(as.integer(df$ts_var[1]), 201309)
+  
+  # delete the table
+  dt <- client$deleteTable(tableId)
+  expect_false(client$tableExists(tableId))
+  # delete the bucket
+  dt <- client$deleteBucket(result$id)
+  expect_false(client$bucketExists(result$id))
+})
+
+test_that("writeToNonExisingBucket", {
+  client <- SapiClient$new(
+    token = KBC_TOKEN,
+    url = KBC_URL
+  )
+  # check if our testing table and bucket exist, if so remove them
+  if (client$bucketExists("in.c-r_client_testing")) {
+    if (client$tableExists("in.c-r_client_testing.test_table")) {
+      client$deleteTable("in.c-r_client_testing.test_table")
+    }
+    client$deleteBucket("in.c-r_client_testing")
+  }
+  # make the bucket we will use for testing
+  result <- client$createBucket("r_client_testing","in","This bucket was created by the sapi R client test routine")
+  verifyBucketStructure(result)
+  
+  # create a table in our new bucket
+  df <- data.frame(ts_var = '201309', actual_value = '20348832.0000000000', expected_value = '15190371.0000000000', run_id = '130865113')
+  expect_error(client$saveTable(df, 'in.c-not-existing', 'ANM__991', 'tmpfile.csv'), regexp = 'not found')
+  
+  # delete the bucket
+  dt <- client$deleteBucket(result$id)
+  expect_false(client$bucketExists(result$id))
+})

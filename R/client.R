@@ -66,7 +66,7 @@ SapiClient <- setRefClass(
             body
         },
 
-        #' internal wrapper around the httr GET method
+        #' generic GET method
         #' 
         #' @param url
         #' @param query - list of query arguments ex. list(foo = bar)
@@ -77,6 +77,54 @@ SapiClient <- setRefClass(
                 query <- NULL
             }
             httr::GET(urlG, httr::add_headers("X-StorageApi-Token" = .self$token, "User-Agent" = .self$userAgent), query = query)
+        },
+        
+        #' generic POST method
+        #' 
+        #' @param urlP - url to post to
+        #' @param data - body of the request
+        #' @return body of the response
+        #' @exportMethod
+        genericPost = function(urlP, data = NULL) {
+          .self$decodeResponse(  
+            httr::POST(urlP,
+                     httr::add_headers("X-StorageApi-Token" = .self$token, "User-Agent" = .self$userAgent),
+                     body = data)
+          )
+        },
+        
+        #' generic method for GET requests
+        #'
+        #' @param urlG - full URL 
+        #' @param query - query parameters
+        #' @return body of the response
+        #' @exportMethod
+        genericGet = function(urlG, query = NULL) {
+          if ((class(query) == 'list') && (length(query) == 0)) {
+            # if query is an empty list, convert it to NULL, otherwise httr::GET will botch the request
+            query <- NULL
+          }
+          resp <- httr::GET(urlG, 
+                            httr::add_headers("X-StorageApi-Token" = .self$token, "User-Agent" = .self$userAgent), 
+                            query = query)
+          
+          .self$decodeResponse(resp)
+        },
+        
+        #' Generic method for DELETE requests
+        #'
+        #' @param urlD - the url to send the request to
+        #' @return true for success, will throw error if status code returned not 204
+        #' @exportMethod
+        genericDelete = function(urlD) {
+          resp <- httr::DELECT(urlD,
+                       httr::add_headers("X-StorageApi-Token" = .self$token, "User-Agent" = .self$userAgent)
+                       )
+          if (!(resp$status_code == 204)) {
+            stop(paste0(resp$status_code, " Unnexpected Status code  ", .self$decodeResponse(resp)))
+          } else {
+            TRUE
+          }
         },
         
         #' internal helper for parsing options

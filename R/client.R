@@ -116,9 +116,10 @@ SapiClient <- setRefClass(
         #' @param urlD - the url to send the request to
         #' @return true for success, will throw error if status code returned not 204
         #' @exportMethod
-        genericDelete = function(urlD) {
-          resp <- httr::DELECT(urlD,
-                       httr::add_headers("X-StorageApi-Token" = .self$token, "User-Agent" = .self$userAgent)
+        genericDelete = function(urlD, query = NULL) {
+          resp <- httr::DELETE(urlD, 
+                       httr::add_headers("X-StorageApi-Token" = .self$token, "User-Agent" = .self$userAgent),
+                       query = query
                        )
           if (!(resp$status_code == 204)) {
             stop(paste0(resp$status_code, " Unnexpected Status code  ", .self$decodeResponse(resp)))

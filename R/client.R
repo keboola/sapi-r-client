@@ -372,7 +372,14 @@ SapiClient <- setRefClass(
             }
             fileInfo <- .self$getFileInfo(job$result$file$id)
             df <- .self$getFileData(fileInfo)
-            names(df) <- columns
+            browser()
+            if (nrow(df) == 0) {
+              # data frame is empty and it has unfortunately already been truncated
+              # to have no columns either - make a new empty DF, but with the right columns
+              df <- as.data.frame(setNames(replicate(3, character(0), simplify = FALSE), columns), stringsAsFactors = FALSE)
+            } else {
+              colnames(df) <- columns
+            }
             df
           }, error = function(e) {
             stop(e$message)

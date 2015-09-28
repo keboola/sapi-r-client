@@ -173,7 +173,7 @@ test_that("emptyRowTable", {
   verifyBucketStructure(result)
   
   # create a table in our new bucket
-  df <- data.frame(ts_var = character(), actual_value = character(), run_id = character())
+  df <- data.frame(ts_var = character(), actual_value = character(), run_id = character(), dummy = character())
   tableId <- client$saveTable(df, 'in.c-r_client_testing', 'test_table', 'tmpfile.csv')
   
   #import the data back into R session, test multiple where values
@@ -183,7 +183,7 @@ test_that("emptyRowTable", {
   )
   
   expect_equal(nrow(df), 0)
-  expect_equal(ncol(df), 3)
+  expect_equal(ncol(df), 4)
   
   # delete the table
   dt <- client$deleteTable(tableId)

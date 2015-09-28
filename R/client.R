@@ -375,7 +375,7 @@ SapiClient <- setRefClass(
             if (nrow(df) == 0) {
               # data frame is empty and it has unfortunately already been truncated
               # to have no columns either - make a new empty DF, but with the right columns
-              df <- as.data.frame(setNames(replicate(3, character(0), simplify = FALSE), columns), stringsAsFactors = FALSE)
+              df <- as.data.frame(setNames(replicate(length(columns), character(0), simplify = FALSE), columns), stringsAsFactors = FALSE)
             } else {
               colnames(df) <- columns
             }

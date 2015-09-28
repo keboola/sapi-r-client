@@ -372,7 +372,6 @@ SapiClient <- setRefClass(
             }
             fileInfo <- .self$getFileInfo(job$result$file$id)
             df <- .self$getFileData(fileInfo)
-            browser()
             if (nrow(df) == 0) {
               # data frame is empty and it has unfortunately already been truncated
               # to have no columns either - make a new empty DF, but with the right columns

@@ -563,6 +563,66 @@ SapiClient <- setRefClass(
           resp <- .self$get(paste0(.self$url,"storage/tables/", tableId))
           if (resp$status_code == 404) FALSE
           else TRUE
-        }
+        },
+        
+        #' Create read-only redshift credentials
+        #' 
+        #' @param string bucketId
+        #' @param string credentialsName
+        #' @return list credentials
+        createCredentials = function(bucketId, credentialsName) {
+          resp <- 
+            tryCatch(
+              {
+                httr::POST(
+                  paste0(.self$url,"storage/buckets/", bucketId,"/credentials"),
+                  httr::add_headers("X-StorageApi-Token" = .self$token),
+                  body = list(name=credentialsName)
+                )
+              }, error = function(e) {
+                stop(paste("error posting fle to sapi", e))
+              }, warning = function(w) {
+                stop(paste("attempting save file warning recieved:", w$message))
+              }
+            )
+          .self$decodeResponse(resp) 
+        },
+              
+        #' list credentials for given bucket
+        #' 
+        #' @return list - credentials list
+        #' @exportMethod
+        listCredentials = function() {
+          .self$decodeResponse(
+            .self$get(paste0(.self$url,"storage/credentials"))
+          )
+        },
+        
+        #' get credentials of a given name
+        #' 
+        #' @param string credentialsId
+        #' @return list credentials
+        #' @exportMethod
+        getCredentials = function(credentialsId) {
+          .self$decodeResponse(
+            .self$get(paste0(.self$url,"storage/credentials/",credentialsId))
+          )
+        },
+              
+        #' delete credentials
+        #' 
+        #' @param string credentialsId
+        #' @return boolean TRUE on success, throws error on failure
+        #' @exportMethod
+        deleteCredentials = function(credentialsId) {
+          resp <- httr::DELETE(paste0(.self$url,"storage/credentials/", credentialsId),
+                               httr::add_headers("X-StorageApi-Token" = .self$token))
+          
+          if (!(resp$status_code == 204)) {
+            stop(paste0(resp$status_code, " Error deleting credentials ", credentialsId))
+          } else {
+            TRUE
+          }
+        } 
     )
 )

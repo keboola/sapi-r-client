@@ -180,23 +180,23 @@ SapiClient <- setRefClass(
           if (fileInfo$isSliced) {
             response <- httr::GET(fileInfo$url)
             manifest <- .self$decodeResponse(response)
-            df <- 
-              lapply(seq_along(manifest$entries), function(x) {
-                fullPath <- manifest$entries[[x]]$url
+            target <- tempfile('s3dld-')
+            for (i in seq_along(manifest$entries)) {
+              fullPath <- manifest$entries[[i]]$url
                 splittedPath <- strsplit(fullPath,"/")
                 fileKey <-  paste(splittedPath[[1]][4:length(splittedPath[[1]])], collapse="/")
                 bucket <- fileInfo$s3Path$bucket
-                # get the chunk from S3
-                .self$s3GET(paste0("https://",bucket,".s3.amazonaws.com/",fileKey), fileInfo$credentials)
-            })
-            df <- do.call("rbind", df)
+              # get the chunk from S3 and store it in temporary file (target)
+              .self$s3GET(fileInfo$region, paste0("https://", bucket, ".s3.amazonaws.com/", fileKey), fileInfo$credentials, target)
+            }
           } else {
             # single file, so just get it
             bucket <- fileInfo$s3Path$bucket
             key <- fileInfo$s3Path$key
-            df <- .self$s3GET(paste0("https://",bucket,".s3.amazonaws.com/",key), fileInfo$credentials, header=TRUE)
+            .self$s3GET(fileInfo$region, paste0("https://",bucket,".s3.amazonaws.com/",key), fileInfo$credentials, target)
           }
-          df
+          df <- data.table::fread(target)
+          return(df)
         },
         
         #' Upload a file to AWS S3 bucket 
@@ -342,11 +342,10 @@ SapiClient <- setRefClass(
           job$results$id
         },
         
-        #' import table into your R session
-        #' this is a wrapper function
+        #' Import table into your R session
         #' 
-        #' @param string tableId
-        #' @param list options
+        #' @param string tableId Table ID (including bucket Id) 
+        #' @param list options SAPI options
         #' @return dataframe
         #' @exportMethod
         importTable = function(tableId, options=list()) {
@@ -507,9 +506,9 @@ SapiClient <- setRefClass(
         #' 
         #' @param string url - the url to GET
         #' @param list credentials - the temporary AWS credentials
-        #' @return request body (should be data.frame)
-        s3GET = function(url, credentials, header = FALSE) {
-          region <- "us-east-1"
+        #' @return NULL
+        s3GET = function(region, url, credentials, target) {
+          #region <- "us-east-1"
           current <- Sys.time()
           d_timestamp <- format(current, "%Y%m%dT%H%M%SZ", tz = "UTC")
           p <- httr::parse_url(url)
@@ -537,13 +536,10 @@ SapiClient <- setRefClass(
           H <- do.call(httr::add_headers, headers)
           
           r <- httr::GET(url, H)
-          content <- httr::content(r, as="text")
-          if (content != '') {
-            read.csv(text = content, header=header, colClasses = "character")
-          } else {
-            data.frame()
-          }
+          cat(httr::content(r, as = "text"), file = target, append = TRUE)
+          NULL
         },
+        
         #' Check to see if a bucket exists
         #' 
         #' @param string bucketId

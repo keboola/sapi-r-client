@@ -1,6 +1,6 @@
 #' Client for working with Keboola Connection Storage API.
 #'
-#' @import httr methods aws.signature
+#' @import httr methods aws.signature data.table
 #' @exportClass SapiClient
 #' @export SapiClient
 SapiClient <- setRefClass(
@@ -367,7 +367,7 @@ SapiClient <- setRefClass(
             \\item{\\code{options} List with additional options.}
             }}
             \\subsection{Return Value}{String job ID}"
-            write.csv(df, file=fileName, row.names=FALSE)
+            write.csv(df, file = fileName, row.names = FALSE)
             fileId <- .self$uploadFile(fileName)
             # start writing job
             res <- .self$saveTableAsync(bucket, tableName, fileId, options)
@@ -427,7 +427,7 @@ SapiClient <- setRefClass(
                     } else {
                         colnames(df) <- columns
                     }
-                    df
+                    return(df)
                 }, error = function(e) {
                     stop(e$message)
                 }

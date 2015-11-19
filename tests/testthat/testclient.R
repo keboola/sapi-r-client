@@ -58,20 +58,6 @@ test_that("listBuckets", {
   })
 })
 
-
-test_that("listTables", {
-  client <- SapiClient$new(
-    token = KBC_TOKEN,
-    url = KBC_URL
-  )
-  tablelist <- client$listTables("sys.c-shiny")
-  expect_equal(1,length(tablelist))
-  
-  lapply(seq_along(tablelist), function(x) {
-    verifyTableStructure(tablelist[[x]])
-  }) 
-})
-
 test_that("createAndDeleteMethods", {
   client <- SapiClient$new(
     token = KBC_TOKEN,
@@ -97,6 +83,10 @@ test_that("createAndDeleteMethods", {
   #successfully saved the table.  retrieve it
   tbl <- client$getTable(tableId)
   verifyTableStructure(tbl)
+  
+  #confirm listTables function
+  tablelist <- client$listTables("in.c-r_client_testing")
+  expect_equal(1,length(tablelist))
   
   #import the data back into R session, test multiple where values
   df <- client$importTable(tbl$id, options = list(whereColumn = "colA", whereValues = c("1","2","4")))

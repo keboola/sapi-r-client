@@ -28,8 +28,6 @@ verifyTableStructure <- function(table) {
   expect_false(is.null(table$isAlias)) 
 }
 
-
-
 test_that("verifyToken", {
     client <- SapiClient$new(
         token = KBC_TOKEN,
@@ -93,8 +91,8 @@ test_that("createAndDeleteMethods", {
   # create a table in our new bucket
   
   colC <- c("99786952", "109597927.109599284", "109611185.109612267", "109783546.109790316", "110305160.110305730")
-  df <- data.frame(colA = 1:5, colB = 5:1, colC = colC)
-  tableId <- client$saveTable(df, result$id, "test_table", "tmpfile.csv")
+  dfOrig <- data.frame(colA = 1:5, colB = 5:1, colC = colC)
+  tableId <- client$saveTable(dfOrig, result$id, "test_table", "tmpfile.csv")
   
   #successfully saved the table.  retrieve it
   tbl <- client$getTable(tableId)

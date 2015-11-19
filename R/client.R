@@ -1,6 +1,6 @@
 #' Client for working with Keboola Connection Storage API.
 #'
-#' @import httr methods aws.signature XML
+#' @import httr methods aws.signature
 #' @exportClass SapiClient
 #' @export SapiClient
 SapiClient <- setRefClass(
@@ -11,32 +11,35 @@ SapiClient <- setRefClass(
         userAgent = 'character'
     ),
     methods = list(
-        #' Constructor.
-        #'
-        #' @param token KBC Storage API token.
-        #' @param url Optional URL of the provisioning API.
-        #' @exportMethod
         initialize = function(
                 token,
                 url = 'https://connection.keboola.com/v2/',
                 userAgent = "Keboola StorageApi R Client/v2"
         ) {
+            "Constructor.
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{token} KBC Storage API token.}
+            \\item{\\code{url} Optional URL of the provisioning API.}
+            }}
+            \\subsection{Return Value}{Another return value}"          
             .self$token <<- token
             .self$url <<- url
             .self$userAgent <<- userAgent
             # check for token validity
             tryCatch(
             {  
-              vf <- .self$verifyToken()
+                vf <- .self$verifyToken()
             }, error = function(e) {
-              stop("Invalid Access Token")
+                stop("Invalid Access Token")
             })
         },
 
-        #' Internal method to process API response
-        #' @param response List as returned from httr POST/GET method
-        #' @return response body - either list or string in case the body cannot be parsed as JSON.
         decodeResponse = function(response) {
+            "Internal method to process API response.
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{response} List as returned from httr POST/GET method.}
+            }}
+            \\subsection{Return Value}{Response body - either list or string in case the body cannot be parsed as JSON.}"
             # decode response
             content <- httr::content(response, as = "text")
             body <- NULL
@@ -66,330 +69,377 @@ SapiClient <- setRefClass(
             body
         },
 
-        #' generic GET method
-        #' 
-        #' @param url
-        #' @param query - list of query arguments ex. list(foo = bar)
-        #' @return list - the response object
         get = function(urlG, query = NULL) {
+            "Generic GET method.
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{urlG} Target URL.}
+            \\item{\\code{query} List of query arguments ex. list(foo = bar).}
+            }}
+            \\subsection{Return Value}{List with HTTP response.}"
             if ((class(query) == 'list') && (length(query) == 0)) {
                 # if query is an empty list, convert it to NULL, otherwise httr::GET will botch the request
                 query <- NULL
             }
             httr::GET(urlG, httr::add_headers("X-StorageApi-Token" = .self$token, "User-Agent" = .self$userAgent), query = query)
         },
-        
-        #' generic POST method
-        #' 
-        #' @param urlP - url to post to
-        #' @param data - body of the request
-        #' @return body of the response
-        #' @exportMethod
+
         genericPost = function(urlP, data = NULL) {
-          .self$decodeResponse(  
-            httr::POST(urlP,
-                     httr::add_headers("X-StorageApi-Token" = .self$token, "User-Agent" = .self$userAgent),
-                     body = data)
-          )
+            "Generic POST method.
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{urlP} Target URL.}
+            \\item{\\code{data} Body of the request.}
+            }}
+            \\subsection{Return Value}{Decoded JSON body as a list of items.}"
+            .self$decodeResponse(
+                httr::POST(urlP,
+                    httr::add_headers(
+                        "X-StorageApi-Token" = .self$token, 
+                        "User-Agent" = .self$userAgent
+                    ),
+                    body = data
+                )
+            )
         },
         
-        #' generic method for GET requests
-        #'
-        #' @param urlG - full URL 
-        #' @param query - query parameters
-        #' @return body of the response
-        #' @exportMethod
         genericGet = function(urlG, query = NULL) {
-          if ((class(query) == 'list') && (length(query) == 0)) {
-            # if query is an empty list, convert it to NULL, otherwise httr::GET will botch the request
-            query <- NULL
-          }
-          resp <- httr::GET(urlG, 
-                            httr::add_headers("X-StorageApi-Token" = .self$token, "User-Agent" = .self$userAgent), 
-                            query = query)
-          
-          .self$decodeResponse(resp)
+            "Generic POST method.
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{urlG} Target URL.}
+            \\item{\\code{query} Query parameters.}
+            }}
+            \\subsection{Return Value}{Decoded JSON body as a list of items.}"
+            if ((class(query) == 'list') && (length(query) == 0)) {
+                # if query is an empty list, convert it to NULL, otherwise httr::GET will botch the request
+                query <- NULL
+            }
+            resp <- httr::GET(
+                urlG, 
+                httr::add_headers(
+                    "X-StorageApi-Token" = .self$token, 
+                    "User-Agent" = .self$userAgent
+                ),
+                query = query
+            )
+            .self$decodeResponse(resp)
         },
         
-        #' Generic method for DELETE requests
-        #'
-        #' @param urlD - the url to send the request to
-        #' @return true for success, will throw error if status code returned not 204
-        #' @exportMethod
         genericDelete = function(urlD, query = NULL) {
-          resp <- httr::DELETE(urlD, 
-                       httr::add_headers("X-StorageApi-Token" = .self$token, "User-Agent" = .self$userAgent),
-                       query = query
-                       )
-          if (!(resp$status_code == 204)) {
-            stop(paste0(resp$status_code, " Unnexpected Status code  ", .self$decodeResponse(resp)))
-          } else {
-            TRUE
-          }
+            "Generic DELETE method.
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{urlD} Target URL.}
+            \\item{\\code{query} Query parameters.}
+            }}
+            \\subsection{Return Value}{TRUE for success. Will throw error if status code returned is not 204.}"
+            resp <- httr::DELETE(
+                urlD,
+                httr::add_headers(
+                    "X-StorageApi-Token" = .self$token,
+                    "User-Agent" = .self$userAgent
+                ),
+                query = query
+            )
+            if (!(resp$status_code == 204)) {
+                stop(paste0(resp$status_code, " Unnexpected Status code  ", .self$decodeResponse(resp)))
+            } else {
+                TRUE
+            }
         },
         
-        #' internal helper for parsing options
-        #' 
-        #' @param list options
-        #' @return list options
         prepareOptions = function(options) {
-          # which parameters aree allowed
-          params <- c("limit","changedSince","changedUntil","whereColumn","whereValues")
-          opts <- options[names(options) %in% params]
-          if ("columns" %in% names(options)) {
-            opts[["columns"]] <- paste(options[["columns"]], collapse=",")
-          }
-          if ("whereValues" %in% names(options)) {
-            for (i in 1:length(options[["whereValues"]])) {
-              opts[[paste0("whereValues[",i-1,"]")]] <- options[["whereValues"]][i]  
-            } 
-            opts[["whereValues"]] <- NULL
-          }
-          opts
+            "Internal helper for parsing options
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{options} List.}
+            }}
+            \\subsection{Return Value}{List with options}"
+            # which parameters are allowed
+            params <- c("limit", "changedSince", "changedUntil", "whereColumn", "whereValues")
+            opts <- options[names(options) %in% params]
+            if ("columns" %in% names(options)) {
+                opts[["columns"]] <- paste(options[["columns"]], collapse=",")
+            }
+            if ("whereValues" %in% names(options)) {
+                for (i in 1:length(options[["whereValues"]])) {
+                    opts[[paste0("whereValues[",i-1,"]")]] <- options[["whereValues"]][i]  
+                }
+                opts[["whereValues"]] <- NULL
+            }
+            return(opts)
         },
         
-        #' get details of the token
-        #'
-        #' @return list object containing details of this client's token
-        #' @exportMethod
         verifyToken = function() {
-            .self$decodeResponse(.self$get(paste0(.self$url,"storage/tokens/verify")))
+            "Get details of the current token
+            \\subsection{Return Value}{List containing details of this client's token}"
+            .self$decodeResponse(.self$get(paste0(.self$url, "storage/tokens/verify")))
         },
         
-        #' make a status request to an async syrup job
-        #' 
-        #' @param url - this will normally be the url returned from the createTableAsync/importTableAsync methods
-        #' @return list - job details body 
         getJobStatus = function(url) {
+            "Make a status request to an async syrup job
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{url} This will normally be the url returned from the 
+            createTableAsync/importTableAsync methods.}
+            }}
+            \\subsection{Return Value}{List with job details}"
             .self$decodeResponse(.self$get(url))
         },
         
-        #' return info about the file, including credentials
-        #' 
-        #' @param string fileId
-        #' @return list fileInfo object
         getFileInfo = function(fileId, federationToken = TRUE) {
-            .self$decodeResponse(.self$get(paste0(url,"storage/files/", fileId), query=list(federationToken=federationToken)))
+            "Get information about a file, including credentials.
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{fileId} Storage file ID.}
+            \\item{\\code{federationToken} Use federation token?.}
+            }}
+            \\subsection{Return Value}{List with file information}"
+            .self$decodeResponse(
+                .self$get(
+                    paste0(url, "storage/files/", fileId), 
+                    query = list(federationToken = federationToken)
+                )
+            )
         },
         
-        #' get a file from the s3 storage
-        #' 
-        #' @param list fileInfo object
-        #' @return file contents
         getFileData = function(fileInfo) {
-          if (fileInfo$isSliced) {
-            response <- httr::GET(fileInfo$url)
-            manifest <- .self$decodeResponse(response)
-            target <- tempfile('s3dld-')
-            for (i in seq_along(manifest$entries)) {
-              fullPath <- manifest$entries[[i]]$url
-                splittedPath <- strsplit(fullPath,"/")
-                fileKey <-  paste(splittedPath[[1]][4:length(splittedPath[[1]])], collapse="/")
-                bucket <- fileInfo$s3Path$bucket
-              # get the chunk from S3 and store it in temporary file (target)
-              .self$s3GET(fileInfo$region, paste0("https://", bucket, ".s3.amazonaws.com/", fileKey), fileInfo$credentials, target)
-            }
-          } else {
-            # single file, so just get it
-            bucket <- fileInfo$s3Path$bucket
-            key <- fileInfo$s3Path$key
-            .self$s3GET(fileInfo$region, paste0("https://",bucket,".s3.amazonaws.com/",key), fileInfo$credentials, target)
-          }
-          df <- data.table::fread(target)
-          return(df)
-        },
-        
-        #' Upload a file to AWS S3 bucket 
-        #' (compression is not yet supported by this client)
-        #' 
-        #' @param string file to upload
-        #' @param list options - for a full list of options please see the api docs 
-        #' @return int fileId of the uploaded file
-        uploadFile = function(dataFile, options = list()) {
-          if (!("name" %in% names(options))) {
-            options$name = basename(dataFile)
-          }
-          resp <- tryCatch(
-            {  
-                .self$decodeResponse(
-                      httr::POST(paste0(.self$url,"storage/files/prepare"),
-                        httr::add_headers("X-StorageApi-Token" = .self$token),
-                        body = options)
-              )
-            }, error = function(e) {
-              stop(paste("error preparing file upload", e))
-            }, warning = function(w) {
-              stop(paste("preparing file upload warning recieved:", w$message))
-            }
-          )
-          uploadParams <- resp$uploadParams
-          body <- list(
-            key = uploadParams$key,
-            acl = uploadParams$acl,
-            signature = uploadParams$signature,
-            policy = uploadParams$policy,
-            AWSAccessKeyId = uploadParams$AWSAccessKeyId,
-            file = httr::upload_file(dataFile)
-          )
-          if ("isEncrypted" %in% names(options)) {
-            body$x-amz-server-side-encryption <- uploadParams$x-amz-server-side-encryption
-          }
-          res <- 
-            tryCatch(
-              {
-                httr::POST(uploadParams$url, body=body)
-              }, error = function(e) {
-                stop(paste("error uploading file", e))
-              }, warning = function(w) {
-                stop(paste("file upload warning recieved:", w$message))
-              }
-            )
-          # return the file id of the uploaded file
-          resp$id
-        },
-        
-        #' Create/Overwrite a new table in a bucket ascynchronously
-        #'
-        #' @param bucket
-        #' @param tableName
-        #' @param fileId - id of file received from the uploadFile method
-        #' @param (optional) character 
-        #' @param (optional) list - additional parameters
-        #' @return string - URL to ping for table creation status check
-        saveTableAsync = function(bucket, tableName, fileId, opts = list()) {
-          posturl <- paste(.self$url,"storage/buckets/", bucket, "/tables-async", sep="")
-          
-          #prepare our options
-          options = list(
-            bucketId = bucket,
-            name = tableName,
-            delimiter = if ("delimiter" %in% names(opts)) opts$delimeter else ",",
-            enclosure = if ("enclosure" %in% names(opts)) opts$enclosure else '"',
-            escapedBy = if ("escapedBy" %in% names(opts)) opts$delimeter else "",
-            primaryKey = if ("primaryKey" %in% names(opts)) opts$primaryKey else NULL,
-            transactional = if ("transactional" %in% names(opts)) ? opts$transactional else FALSE,
-            dataFileId = fileId
-          )
-          
-          resp <-
-            tryCatch( 
-              {
-                httr::POST(posturl,httr::add_headers("X-StorageApi-Token" = .self$token),
-                     body = options)
-              }, error = function(e) {
-                stop(paste("error creating table", e))
-              }, warning = function(w) {
-                stop(paste("warning recieved creating table:", w$message))
-              }
-            )
-          httr::content(resp)
-        },
-        
-        #' Begin an export job of a table.
-        #' 
-        #' @param string table identifier
-        #' @param options allowable query parameters
-        #' @return list containing info of the job.  Contains url to check status
-        importTableAsync = function(tableId, options=list()) {
-          opts <- .self$prepareOptions(options)
-          if (!("federationToken" %in% names(opts))) {
-            opts$federationToken = TRUE
-          }
-          response <- 
-            tryCatch(
-              {
-                  httr::POST(paste0(.self$url,"storage/tables/", tableId, "/export-async"),
-                      httr::add_headers("X-StorageApi-Token" = .self$token, "User-Agent" = .self$userAgent),
-                     body = opts)
-              }, error = function(e) {
-                stop(paste("error posting file to sapi", e))
-              }, warning = function(w) {
-                stop(paste("Save file warning recieved: ", w$message))
-              }
-            )
-          httr::content(response)
-        },
-        
-        #' wrapper for the saveTableAsync function call
-        #' 
-        #' @param data.frame data to save
-        #' @param string bucket
-        #' @param string tableName
-        #' @param string fileName - temporary file name to write to. will be deleted
-        #' @return boolean
-        #' @exportMethod
-        saveTable = function(df, bucket, tableName, fileName="tmpfile.csv", options=list()) {
-          write.csv(df, file=fileName, row.names=FALSE)
-          fileId <- .self$uploadFile(fileName)
-          # start writing job
-          res <- .self$saveTableAsync(bucket, tableName, fileId, options)
-          if (!is.null(res$error)) {
-            stop(paste0('Cannot save table ', bucket, '.', tableName, ' error:', res$error, ' (', res$exceptionId, ')'))
-          }
-          repeat {
-            job <- .self$getJobStatus(res$url)
-            # check the job status
-            if (job$status == "success") {
-              break
-            } else if (job$status != "waiting" && job$status != "processing") {
-              stop(paste("Unexpected Job status:", job$status))
-            }
-            Sys.sleep(0.5)
-          }
-          # if we got this far the write was successful
-          # remove temporary file
-          file.remove(fileName)
-          job$results$id
-        },
-        
-        #' Import table into your R session
-        #' 
-        #' @param string tableId Table ID (including bucket Id) 
-        #' @param list options SAPI options
-        #' @return dataframe
-        #' @exportMethod
-        importTable = function(tableId, options=list()) {
-          tryCatch({
-            res <- .self$importTableAsync(tableId, options=options)
-            if (!is.null(res$error)) {
-              stop(paste("Error retrieving table:",res$error))
-            }      
-            repeat {
-              job <- .self$getJobStatus(res$url)
-              if (job$status == "success") {
-                break
-              } else if (job$status != "waiting" && job$status != "processing") {
-                stop(paste("Unexpected Job status:", job$status))
-              }
-              Sys.sleep(0.5)
-            }
-            table <- .self$getTable(tableId)
-            if ("columns" %in% names(options)) {
-              columns <- options$columns
-            }else {
-              columns <- table$columns
-            }
-            fileInfo <- .self$getFileInfo(job$result$file$id)
-            df <- .self$getFileData(fileInfo)
-            if (nrow(df) == 0) {
-              # data frame is empty and it has unfortunately already been truncated
-              # to have no columns either - make a new empty DF, but with the right columns
-              df <- as.data.frame(setNames(replicate(length(columns), character(0), simplify = FALSE), columns), stringsAsFactors = FALSE)
+            "Get a file from the S3 storage
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{list} File info list object (see \\code{getFileInfo())}.}
+            }}
+            \\subsection{Return Value}{Data frame with file contents}"
+            if (fileInfo$isSliced) {
+                response <- httr::GET(fileInfo$url)
+                manifest <- .self$decodeResponse(response)
+                target <- tempfile('s3dld-')
+                for (i in seq_along(manifest$entries)) {
+                    fullPath <- manifest$entries[[i]]$url
+                    splittedPath <- strsplit(fullPath, "/")
+                    fileKey <-  paste(splittedPath[[1]][4:length(splittedPath[[1]])], collapse = "/")
+                    bucket <- fileInfo$s3Path$bucket
+                    # get the chunk from S3 and store it in temporary file (target)
+                    .self$s3GET(
+                        fileInfo$region, 
+                        paste0("https://", bucket, ".s3.amazonaws.com/", fileKey), 
+                        fileInfo$credentials, 
+                        target
+                    )
+                }
             } else {
-              colnames(df) <- columns
+                # single file, so just get it
+                bucket <- fileInfo$s3Path$bucket
+                key <- fileInfo$s3Path$key
+                .self$s3GET(
+                    fileInfo$region, 
+                    paste0("https://", bucket, ".s3.amazonaws.com/", key), 
+                    fileInfo$credentials, 
+                    target
+                )
             }
-            df
-          }, error = function(e) {
-            stop(e$message)
-          })  
+            df <- data.frame()
+            tryCatch(
+                {
+                    df <- data.table::fread(target, header = FALSE)
+                    # in case of empty file, fread causes error, silence it and continue with empty df
+                }, error = function(e) {}
+            )
+            return(df)
         },
         
-        #' get a list of all buckets
-        #' 
-        #' @param list of query parameters
-        #' @return list of buckets
-        #' @exportMethod
+        uploadFile = function(dataFile, options = list()) {
+            "Upload a file to AWS S3 bucket.
+            (compression is not yet supported by this client)
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{string} File to upload.}
+            \\item{\\code{options} List options. (For a full list of options please see the api docs).}
+            }}
+            \\subsection{Return Value}{Integer file ID of the uploaded file.}"
+            if (!("name" %in% names(options))) {
+                options$name = basename(dataFile)
+            }
+            resp <- tryCatch(
+                {
+                .self$decodeResponse(
+                    httr::POST(paste0(.self$url,"storage/files/prepare"),
+                        httr::add_headers("X-StorageApi-Token" = .self$token),
+                        body = options
+                    )
+                )}, error = function(e) {
+                    stop(paste("error preparing file upload", e))
+                }, warning = function(w) {
+                    stop(paste("preparing file upload warning recieved:", w$message))
+                }
+            )
+            uploadParams <- resp$uploadParams
+            body <- list(
+                key = uploadParams$key,
+                acl = uploadParams$acl,
+                signature = uploadParams$signature,
+                policy = uploadParams$policy,
+                AWSAccessKeyId = uploadParams$AWSAccessKeyId,
+                file = httr::upload_file(dataFile)
+            )
+            if ("isEncrypted" %in% names(options)) {
+                body$x-amz-server-side-encryption <- uploadParams$x-amz-server-side-encryption
+            }
+            res <- tryCatch(
+                {
+                    httr::POST(uploadParams$url, body=body)
+                }, error = function(e) {
+                    stop(paste("error uploading file", e))
+                }, warning = function(w) {
+                    stop(paste("file upload warning recieved:", w$message))
+                }
+            )
+            # return the file id of the uploaded file
+            return(resp$id)
+        },
+        
+        saveTableAsync = function(bucket, tableName, fileId, opts = list()) {
+            "Create/Overwrite a new table in a bucket ascynchronously.
+            Generally use the \\code{saveTable} method
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{bucket} Storage bucket ID.}
+            \\item{\\code{tableName} Table name.}
+            \\item{\\code{fileId} Id of file received from the \\code{uploadFile} method.}
+            \\item{\\code{opts} List with additional parameters.}
+            }}
+            \\subsection{Return Value}{URL to ping for table creation status check.}"
+            posturl <- paste(.self$url,"storage/buckets/", bucket, "/tables-async", sep="")
+          
+            #prepare our options
+            options = list(
+                bucketId = bucket,
+                name = tableName,
+                delimiter = if ("delimiter" %in% names(opts)) opts$delimeter else ",",
+                enclosure = if ("enclosure" %in% names(opts)) opts$enclosure else '"',
+                escapedBy = if ("escapedBy" %in% names(opts)) opts$delimeter else "",
+                primaryKey = if ("primaryKey" %in% names(opts)) opts$primaryKey else NULL,
+                transactional = if ("transactional" %in% names(opts)) ? opts$transactional else FALSE,
+                dataFileId = fileId
+            )
+          
+            resp <- tryCatch( 
+                {
+                    httr::POST(
+                        posturl, 
+                        httr::add_headers("X-StorageApi-Token" = .self$token),
+                        body = options
+                    )
+                }, error = function(e) {
+                    stop(paste("error creating table", e))
+                }, warning = function(w) {
+                    stop(paste("warning recieved creating table:", w$message))
+                }
+            )
+            return(httr::content(resp))
+        },
+        
+        importTableAsync = function(tableId, options=list()) {
+            "Begin an export job of a table.
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{tableId} String table Id (including bucket ID).}
+            \\item{\\code{options} List with additional parameters.}
+            }}
+            \\subsection{Return Value}{URL to ping for table creation status check.}"
+            opts <- .self$prepareOptions(options)
+            if (!("federationToken" %in% names(opts))) {
+                opts$federationToken = TRUE
+            }
+            response <- tryCatch(
+                {
+                    httr::POST(
+                        paste0(.self$url,"storage/tables/", tableId, "/export-async"),
+                        httr::add_headers("X-StorageApi-Token" = .self$token, "User-Agent" = .self$userAgent),
+                        body = opts
+                    )
+                }, error = function(e) {
+                    stop(paste("error posting file to sapi", e))
+                }, warning = function(w) {
+                    stop(paste("Save file warning recieved: ", w$message))
+                }
+            )
+            return(httr::content(response))
+        },
+        
+        saveTable = function(df, bucket, tableName, fileName="tmpfile.csv", options=list()) {
+            "Save a table to Storage. Wrapper for the \\code{saveTableAsync} function.
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{df} data.frame to save.}
+            \\item{\\code{bucket} String bucket ID.}
+            \\item{\\code{tableName} String table name.}
+            \\item{\\code{fileName} String name of temporary file to use, will be deleted when done.}
+            \\item{\\code{options} List with additional options.}
+            }}
+            \\subsection{Return Value}{String job ID}"
+            write.csv(df, file=fileName, row.names=FALSE)
+            fileId <- .self$uploadFile(fileName)
+            # start writing job
+            res <- .self$saveTableAsync(bucket, tableName, fileId, options)
+            if (!is.null(res$error)) {
+                stop(paste0('Cannot save table ', bucket, '.', tableName, ' error:', res$error, ' (', res$exceptionId, ')'))
+            }
+            repeat {
+                job <- .self$getJobStatus(res$url)
+                # check the job status
+                if (job$status == "success") {
+                    break
+                } else if (job$status != "waiting" && job$status != "processing") {
+                    stop(paste("Unexpected Job status:", job$status))
+                }
+                Sys.sleep(0.5)
+            }
+            # if we got this far the write was successful
+            # remove temporary file
+            file.remove(fileName)
+            job$results$id
+        },
+        
+        importTable = function(tableId, options = list()) {
+            "Import a table from Storage into R. Wrapper for the \\code{importTableAsync} function.
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{tableId} String table ID (including bucket ID).}
+            \\item{\\code{options} List with additional options.}
+            }}
+            \\subsection{Return Value}{data.frame with table contents.}"
+            tryCatch(
+                {
+                    res <- .self$importTableAsync(tableId, options = options)
+                    if (!is.null(res$error)) {
+                        stop(paste("Error retrieving table:",res$error))
+                    }      
+                    repeat {
+                        job <- .self$getJobStatus(res$url)
+                        if (job$status == "success") {
+                            break
+                        } else if (job$status != "waiting" && job$status != "processing") {
+                            stop(paste("Unexpected Job status:", job$status))
+                        }
+                        Sys.sleep(0.5)
+                    }
+                    table <- .self$getTable(tableId)
+                    if ("columns" %in% names(options)) {
+                        columns <- options$columns
+                    } else {
+                        columns <- unlist(table$columns)
+                    }
+                    fileInfo <- .self$getFileInfo(job$result$file$id)
+                    df <- .self$getFileData(fileInfo)
+                    if (nrow(df) == 0) {
+                        # data frame is empty and it has unfortunately already been truncated
+                        # to have no columns either - make a new empty DF, but with the right columns
+                        df <- as.data.frame(setNames(replicate(length(columns), character(0), simplify = FALSE), columns), stringsAsFactors = FALSE)
+                    } else {
+                        colnames(df) <- columns
+                    }
+                    df
+                }, error = function(e) {
+                    stop(e$message)
+                }
+            )
+        },
+        
         listBuckets = function(options = list()) {
+            "Get a list of all buckets.
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{options} List with additional options.}
+            }}
+            \\subsection{Return Value}{List of buckets.}"
             resp <- .self$get(paste(.self$url,"storage/buckets",sep=""),options)
             body <- .self$decodeResponse(resp)
 
@@ -400,225 +450,238 @@ SapiClient <- setRefClass(
             body
         },
         
-        #'  Get a list of all tables
-        #'  
-        #'  @param (optional) string bucket - the bucket id whose tables to get
-        #'  @param (optional) list options - query parameters
-        #'  @return list of tables in bucket or list of all tables
-        #'  @exportMethod
         listTables = function(bucket = NULL, options = list()) {
+            "Get a list of all tables.
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{bucket} Bucket ID (if empty, list all tables).}
+            \\item{\\code{options} List with additional options.}
+            }}
+            \\subsection{Return Value}{List of tables.}"
             if (is.null(bucket)) {
-              body <- .self$decodeResponse(
-                  .self$get(paste0(.self$url,"storage/tables"), options)  
+                body <- .self$decodeResponse(
+                    .self$get(paste0(.self$url,"storage/tables"), options)  
                 )
             } else {
-              body <- .self$decodeResponse(
-                  .self$get(paste0(.self$url,"storage/buckets/",bucket,"/tables"), options)  
-                      )
+                body <- .self$decodeResponse(
+                    .self$get(paste0(.self$url,"storage/buckets/",bucket,"/tables"), options)  
+                )
             }
             if (class(body) != 'list') {
-              str <- print(body)
-              stop(paste0("Malformed response from storage API: ", str))
+                str <- print(body)
+                stop(paste0("Malformed response from storage API: ", str))
             }
-            body
+            return(body)
         },
-        
-        #' Get table information
-        #' 
-        #' @param string table identifier
-        #' @return list table details
-        #' @exportMethod
+
         getTable = function(tableId) {
-            .self$decodeResponse(.self$get(paste0(.self$url,"storage/tables/",tableId)))
+            "Get table information.
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{tableId} Table ID (including bucket ID).}
+            }}
+            \\subsection{Return Value}{List with table details.}"
+            .self$decodeResponse(.self$get(paste0(.self$url,"storage/tables/", tableId)))
         },
-        
-        #' Get bucket information
-        #' 
-        #' @param string bucket identifier
-        #' @return list bucket details
-        #' @exportMethod
+
         getBucket = function(bucketId) {
-            .self$decodeResponse(.self$get(paste0(.self$url,"storage/buckets/",bucketId)))
+            "Get bucket information.
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{bucketId} Bucket ID.}
+            }}
+            \\subsection{Return Value}{List with bucket details.}"
+            .self$decodeResponse(.self$get(paste0(.self$url,"storage/buckets/", bucketId)))
         },
         
-        #' Create a new bucket
-        #' 
-        #' @param string name of the bucket
-        #' @param string one of (in, out, sys)
-        #' @param string description of the bucket
-        #' @param string what database provider to use (mysql or redshift)
-        #' @return list the newly created bucket object
-        #' @exportMethod
         createBucket = function(name, stage, description, backend = "redshift") {
-          options = list(
-            name = name,
-            stage = stage,
-            description = description,
-            backend = backend
-          )
-          resp <-
-            tryCatch(
-            {
-              httr::POST(paste0(.self$url,"storage/buckets"), 
-                    httr::add_headers("X-StorageApi-Token" = .self$token),
-                   body = options)
-            }, error = function(e) {
-              stop(paste("error posting fle to sapi", e))
-            }, warning = function(w) {
-              stop(paste("attempting save file warning recieved:", w$message))
-            }
+            "Create a new bucket.
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{name} Name of the bucket.}
+            \\item{\\code{stage} One of \\code{in}, \\code{out}, \\code{sys}.}
+            \\item{\\code{description} Arbitrary description of the bucket.}
+            \\item{\\code{name} Database backend - eithe \\code{mysql} or \\code{redshift}.}
+            }}
+            \\subsection{Return Value}{List with bucket details.}"
+            options = list(
+                name = name,
+                stage = stage,
+                description = description,
+                backend = backend
             )
-          .self$decodeResponse(resp)
+            resp <- tryCatch(
+                {
+                    httr::POST(
+                        paste0(.self$url,"storage/buckets"), 
+                        httr::add_headers("X-StorageApi-Token" = .self$token),
+                        body = options
+                    )
+                }, error = function(e) {
+                    stop(paste("error posting fle to sapi", e))
+                }, warning = function(w) {
+                    stop(paste("attempting save file warning recieved:", w$message))
+                }
+            )
+            .self$decodeResponse(resp)
         },
         
-        #' delete a bucket
-        #' 
-        #' @param string the id of the bucket to delete
-        #' @return TRUE on success
-        #' @exportMethod
         deleteBucket = function(bucketId) {
-          resp <- httr::DELETE(paste0(.self$url,"storage/buckets/",bucketId),
-                httr::add_headers("X-StorageApi-Token" = .self$token))
-          if (!(resp$status_code == 204)) {
-            stop(paste0(resp$status_code, " Error deleting bucket ", bucketId))
-          } else {
-            TRUE
-          }
-        },
-        
-        #' delete a table
-        #'
-        #' @param string the id of the table
-        #' @return TRUE on success
-        #' @exportMethod
-        deleteTable = function(tableId) {
-          resp <- httr::DELETE(paste0(.self$url,"storage/tables/", tableId),
-                    httr::add_headers("X-StorageApi-Token" = .self$token))
-          
-          if (!(resp$status_code == 204)) {
-            stop(paste0(resp$status_code, " Error deleting table ", tableId))
-          } else {
-            TRUE
-          }
-        },
-        
-        #' AWS GET method (uses aws.signature package to compose the signature)
-        #' 
-        #' @param string url - the url to GET
-        #' @param list credentials - the temporary AWS credentials
-        #' @return NULL
-        s3GET = function(region, url, credentials, target) {
-          #region <- "us-east-1"
-          current <- Sys.time()
-          d_timestamp <- format(current, "%Y%m%dT%H%M%SZ", tz = "UTC")
-          p <- httr::parse_url(url)
-          action <- if(p$path == "") "/" else paste0("/",p$path)
-          headers <- list()
-          Sig <- aws.signature::signature_v4_auth(
-            datetime = d_timestamp,
-            region = region,
-            service = "s3",
-            verb = "GET",
-            action = action,
-            query_args = p$query,
-            canonical_headers = list(host = p$hostname,
-                                     `x-amz-date` = d_timestamp,
-                                     `x-amz-security-token` = credentials$SessionToken),
-            request_body = "",
-            key = credentials$AccessKeyId, 
-            secret = credentials$SecretAccessKey
-          )
-          headers$`x-amz-date` <- d_timestamp
-          headers$`x-amz-content-sha256` <- Sig$BodyHash
-          headers$Authorization <- Sig$SignatureHeader
-          headers$`x-amz-security-token` <- credentials$SessionToken
-          
-          H <- do.call(httr::add_headers, headers)
-          
-          r <- httr::GET(url, H)
-          cat(httr::content(r, as = "text"), file = target, append = TRUE)
-          NULL
-        },
-        
-        #' Check to see if a bucket exists
-        #' 
-        #' @param string bucketId
-        #' @return boolean
-        #' @exportMethod
-        bucketExists = function(bucketId) {
-          resp <- .self$get(paste0(.self$url,"storage/buckets/", bucketId))
-          if (resp$status_code == 404) FALSE
-          else TRUE
-        },
-        #' Check to see if a table exists
-        #' 
-        #' @param string tableId
-        #' @return boolean
-        #' @exportMethod
-        tableExists = function(tableId) {
-          resp <- .self$get(paste0(.self$url,"storage/tables/", tableId))
-          if (resp$status_code == 404) FALSE
-          else TRUE
-        },
-        
-        #' Create read-only redshift credentials
-        #' 
-        #' @param string bucketId
-        #' @param string credentialsName
-        #' @return list credentials
-        createCredentials = function(bucketId, credentialsName) {
-          resp <- 
-            tryCatch(
-              {
-                httr::POST(
-                  paste0(.self$url,"storage/buckets/", bucketId,"/credentials"),
-                  httr::add_headers("X-StorageApi-Token" = .self$token),
-                  body = list(name=credentialsName)
-                )
-              }, error = function(e) {
-                stop(paste("error posting fle to sapi", e))
-              }, warning = function(w) {
-                stop(paste("attempting save file warning recieved:", w$message))
-              }
+            "Delete a bucket.
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{bucketId} String ID of the bucket.}
+            }}
+            \\subsection{Return Value}{TRUE}"
+            resp <- httr::DELETE(
+                paste0(.self$url, "storage/buckets/", bucketId),
+                httr::add_headers("X-StorageApi-Token" = .self$token)
             )
-          .self$decodeResponse(resp) 
-        },
-              
-        #' list credentials for given bucket
-        #' 
-        #' @return list - credentials list
-        #' @exportMethod
-        listCredentials = function() {
-          .self$decodeResponse(
-            .self$get(paste0(.self$url,"storage/credentials"))
-          )
+            if (!(resp$status_code == 204)) {
+                stop(paste0(resp$status_code, " Error deleting bucket ", bucketId))
+            } else {
+                TRUE
+            }
         },
         
-        #' get credentials of a given name
-        #' 
-        #' @param string credentialsId
-        #' @return list credentials
-        #' @exportMethod
-        getCredentials = function(credentialsId) {
-          .self$decodeResponse(
-            .self$get(paste0(.self$url,"storage/credentials/",credentialsId))
-          )
+        deleteTable = function(tableId) {
+            "Delete a table.
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{tableId} String ID of the table (including bucket ID).}
+            }}
+            \\subsection{Return Value}{TRUE}"
+            resp <- httr::DELETE(
+                paste0(.self$url, "storage/tables/", tableId),
+                httr::add_headers("X-StorageApi-Token" = .self$token)
+            )
+            if (!(resp$status_code == 204)) {
+                stop(paste0(resp$status_code, " Error deleting table ", tableId))
+            } else {
+                TRUE
+            }
+        },
+        
+        s3GET = function(region, url, credentials, target) {
+            "Get a file (or file chunk) from AWS S3 storage.
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{region} AWS file region.}
+            \\item{\\code{url} file URL to get.}
+            \\item{\\code{credentials} List with file credentials (secret and access key).}
+            \\item{\\code{target} String file to which contents will be appended.}
+            }}
+            \\subsection{Return Value}{TRUE}"
+            current <- Sys.time()
+            d_timestamp <- format(current, "%Y%m%dT%H%M%SZ", tz = "UTC")
+            p <- httr::parse_url(url)
+            action <- if(p$path == "") "/" else paste0("/",p$path)
+            headers <- list()
+            Sig <- aws.signature::signature_v4_auth(
+                datetime = d_timestamp,
+                region = region,
+                service = "s3",
+                verb = "GET",
+                action = action,
+                query_args = p$query,
+                canonical_headers = list(
+                    host = p$hostname,
+                    `x-amz-date` = d_timestamp,
+                    `x-amz-security-token` = credentials$SessionToken
+                ),
+                request_body = "",
+                key = credentials$AccessKeyId, 
+                secret = credentials$SecretAccessKey
+            )
+            headers$`x-amz-date` <- d_timestamp
+            headers$`x-amz-content-sha256` <- Sig$BodyHash
+            headers$Authorization <- Sig$SignatureHeader
+            headers$`x-amz-security-token` <- credentials$SessionToken
+
+            H <- do.call(httr::add_headers, headers)
+            r <- httr::GET(url, H)
+            cat(httr::content(r, as = "text"), file = target, append = TRUE)
+            NULL
+        },
+        
+        bucketExists = function(bucketId) {
+            "Check that a bucket exists.
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{bucketId} Bucket ID.}
+            }}
+            \\subsection{Return Value}{TRUE or FALSE}"
+            resp <- .self$get(paste0(.self$url,"storage/buckets/", bucketId))
+            if (resp$status_code == 404) {
+                FALSE
+            } else {
+                TRUE
+            }
+        },
+        
+        tableExists = function(tableId) {
+            "Check that a bucket exists.
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{tableId} Table ID (including bucket ID).}
+            }}
+            \\subsection{Return Value}{TRUE or FALSE}"
+            resp <- .self$get(paste0(.self$url,"storage/tables/", tableId))
+            if (resp$status_code == 404) {
+                FALSE
+            } else {
+                TRUE
+            }
+        },
+        
+        createCredentials = function(bucketId, credentialsName) {
+            "Create read-only redshift credentials for a given bucket.
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{bucketId} Bucket ID.}
+            \\item{\\code{credentialsName} Descriptive name for the credentials.}
+            }}
+            \\subsection{Return Value}{List with redshift credentials}"
+            resp <- tryCatch(
+                {
+                    httr::POST(
+                        paste0(.self$url,"storage/buckets/", bucketId,"/credentials"),
+                        httr::add_headers("X-StorageApi-Token" = .self$token),
+                        body = list(name=credentialsName)
+                    )
+                }, error = function(e) {
+                    stop(paste("error posting fle to sapi", e))
+                }, warning = function(w) {
+                    stop(paste("attempting save file warning recieved:", w$message))
+                }
+            )
+            .self$decodeResponse(resp) 
         },
               
-        #' delete credentials
-        #' 
-        #' @param string credentialsId
-        #' @return boolean TRUE on success, throws error on failure
-        #' @exportMethod
+        listCredentials = function() {
+            "List read-only redshift credentials.
+            \\subsection{Return Value}{List with redshift credentials}"
+            .self$decodeResponse(
+                .self$get(paste0(.self$url,"storage/credentials"))
+            )
+        },
+        
+        getCredentials = function(credentialsId) {
+            "List read-only redshift credentials with a given name.
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{credentialsId} Credentials name.}
+            }}
+            \\subsection{Return Value}{List with redshift credentials}"
+            .self$decodeResponse(
+                .self$get(paste0(.self$url,"storage/credentials/",credentialsId))
+            )
+        },
+              
         deleteCredentials = function(credentialsId) {
-          resp <- httr::DELETE(paste0(.self$url,"storage/credentials/", credentialsId),
-                               httr::add_headers("X-StorageApi-Token" = .self$token))
-          
-          if (!(resp$status_code == 204)) {
-            stop(paste0(resp$status_code, " Error deleting credentials ", credentialsId))
-          } else {
-            TRUE
-          }
-        } 
+            "Delete redshift credentials.
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{credentialsId} Credentials ID}
+            }}
+            \\subsection{Return Value}{TRUE}"
+            resp <- httr::DELETE(
+                paste0(.self$url,"storage/credentials/", credentialsId),
+                httr::add_headers("X-StorageApi-Token" = .self$token)
+            )
+            if (!(resp$status_code == 204)) {
+                stop(paste0(resp$status_code, " Error deleting credentials ", credentialsId))
+            } else {
+                TRUE
+            }
+        }
     )
 )

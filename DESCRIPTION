@@ -1,16 +1,16 @@
 Package: keboola.sapi.r.client
 Type: Package
 Title: Keboola Connection Storage client
-Version: 1.0
-Date: 2015-05-13
-Author: marc raiser
-Maintainer: marc raiser <marc@keboola.com>
+Version: 1.2
+Date: 2015-11-19
+Author: Marc Raiser
+Maintainer: Marc Raiser <marc@keboola.com>
 Depends:
-  httr,
-  methods,
-  aws.signature,
-  XML
+    httr,
+    methods,
+    aws.signature
 Suggests:
-	testthat
+    testthat
 Description: Client for working with KBC Storage API.
 License: MIT + file LICENSE
+RoxygenNote: 5.0.0.9000

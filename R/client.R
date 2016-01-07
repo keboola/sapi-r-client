@@ -689,7 +689,7 @@ SapiClient <- setRefClass(
             Note that the configuration property must be put in a subsequent PUT call.
             \\subsection{Parameters}{\\itemize{
             \\item{\\code{configurationId} Configuration ID.}
-            \\item{\\code{name} Name of the cconfiguration
+            \\item{\\code{name} Name of the cconfiguration}
             \\item{\\code{description} Descriptiion for the configuration.}
             }}
             \\subsection{Return Value}{List with component configuration}"

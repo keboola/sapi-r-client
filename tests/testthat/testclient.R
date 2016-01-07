@@ -206,3 +206,38 @@ test_that("writeToNonExisingBucket", {
   dt <- client$deleteBucket(result$id)
   expect_false(client$bucketExists(result$id))
 })
+
+test_that("componentConfiguration", {
+    client <- SapiClient$new(
+        token = KBC_TOKEN,
+        url = KBC_URL
+    )
+    testComponent <- "shiny"
+    testConfigId <- "sapi-r-client-test"
+    testConfiguration <- list(atest="test1", btest="test2")
+    
+    # check if our test configuration exists, and if so, delete it
+    tryCatch ({
+        configResponse <- client$getComponentConfiguration(testComponent,testConfigId)
+        client$deleteComponentConfiguration(testComponent,testConfigId)
+    }, error = function(e) {
+        # didn't find configuration, that's great.    
+    })
+    
+    # create component config
+    config <- client$newComponentConfiguration(testComponent,testConfigId,testConfigId, "Description of the test.") 
+    expect_equal(config$id, testConfigId)
+    expect_equal(config$name, testConfigId)
+    expect_equal(config$description, "Description of the test.")
+    
+    # put the configuration property
+    config <- client$putComponentConfiguration(testComponent, testConfigId, testConfiguration)
+    print("putted config")
+    print(config)
+    expect_equal(config$configuration, testConfiguration)
+    
+    # delete the configuration
+    client$deleteComponentConfiguration(testComponent, testConfigId)
+    # check to see that we've made it this far (means delete was successful)
+    expect_true(TRUE)
+})

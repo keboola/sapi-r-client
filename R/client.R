@@ -102,7 +102,7 @@ SapiClient <- setRefClass(
         },
         
         genericGet = function(urlG, query = NULL) {
-            "Generic POST method.
+            "Generic GET method.
             \\subsection{Parameters}{\\itemize{
             \\item{\\code{urlG} Target URL.}
             \\item{\\code{query} Query parameters.}
@@ -679,6 +679,93 @@ SapiClient <- setRefClass(
             )
             if (!(resp$status_code == 204)) {
                 stop(paste0(resp$status_code, " Error deleting credentials ", credentialsId))
+            } else {
+                TRUE
+            }
+        },
+        
+        newComponentConfiguration = function(componentId, configurationId, name, description="") {
+            "Create a new component configuration.
+             Note that the configuration property must be put in a subsequent PUT call.
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{configurationId} Configuration ID.}
+            \\item{\\code{name} Name of the cconfiguration
+            \\item{\\code{description} Descriptiion for the configuration.}
+            }}
+            \\subsection{Return Value}{List with component configuration}"
+            resp <- tryCatch(
+            {
+                httr::POST(
+                    paste0(.self$url,"storage/components/", componentId, "/configs"),
+                    httr::add_headers("X-StorageApi-Token" = .self$token),
+                    body = list(
+                        configurationId=configurationId,
+                        name=name,
+                        description=description
+                    )
+                )
+            }, error = function(e) {
+                stop(paste("error posting fle to sapi", e))
+            }, warning = function(w) {
+                stop(paste("attempting save file warning recieved:", w$message))
+            }
+                        )
+            .self$decodeResponse(resp)    
+        },
+        
+        getComponentConfiguration = function(componentId, configId) {
+            "Get KBC Component Configuration.
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{componentId} ID of the component}
+            \\item{\\code{configId} ID of the configuration}
+            }}
+            \\subsection{Return Value}{List containing component configuration}"
+            .self$decodeResponse(
+                .self$get(paste0(.self$url,"storage/components/",componentId,"/configs/",configId))
+            )  
+        },
+        
+        putComponentConfiguration = function(componentId, configId, configuration) {
+            "PUT the configuration property of the KBC Component Configuration.
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{componentId} ID of the component}
+            \\item{\\code{configId} ID of the configuration}
+            \\item{\\code{configuration} the configuration property (should be of type list)}
+            }}
+            \\subsection{Return Value}{list of the new component configuration}"
+            resp <- httr::PUT(
+                paste0(.self$url,"storage/components/",componentId,"/configs/",configId),
+                httr::add_headers("X-StorageApi-Token" = .self$token),
+                body = list(configuration = jsonlite::toJSON(configuration, auto_unbox=TRUE))
+            ) 
+            if (!(resp$status_code == 200)) {
+                stop(paste0(
+                    resp$status_code, 
+                    " Error putting component: ", component, 
+                    " configuration: ", configId, 
+                    ". Server Response: ", httr::content(resp, as = "text")))
+            } else {
+                .self$decodeResponse(resp)
+            }
+        },
+        
+        deleteComponentConfiguration = function(componentId, configId) {
+            "DELETE the provided component configuration.  CAUTION: this action is irreversible.
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{componentId} ID of the component}
+            \\item{\\code{configId} ID of the configuration}
+            }}
+            \\subsection{Return Value}{TRUE}"
+            resp <- httr::DELETE(
+                paste0(.self$url,"storage/components/", componentId, "/configs/", configId),
+                httr::add_headers("X-StorageApi-Token" = .self$token)
+            )
+            if (!(resp$status_code == 204)) {
+                stop(paste0(
+                    resp$status_code, 
+                    " Error deleting component: ", componentId, 
+                    " configuration: ", configId, 
+                    ". Server Response: ", .self$decodeResponse(resp)))
             } else {
                 TRUE
             }

@@ -3,5 +3,6 @@
 export(SapiClient)
 exportClasses(SapiClient)
 import(aws.signature)
+import(data.table)
 import(httr)
 import(methods)

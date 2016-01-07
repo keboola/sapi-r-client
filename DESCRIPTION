@@ -8,7 +8,8 @@ Maintainer: Marc Raiser <marc@keboola.com>
 Depends:
     httr,
     methods,
-    aws.signature
+    aws.signature,
+    data.table
 Suggests:
     testthat
 Description: Client for working with KBC Storage API.

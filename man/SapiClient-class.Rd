@@ -71,7 +71,7 @@ Client for working with Keboola Connection Storage API.
 }}
 \subsection{Return Value}{TRUE for success. Will throw error if status code returned is not 204.}}
 
-\item{\code{genericGet(urlG, query = NULL)}}{Generic GET method.
+\item{\code{genericGet(urlG, query = NULL)}}{Generic POST method.
 \subsection{Parameters}{\itemize{
 \item{\code{urlG} Target URL.}
 \item{\code{query} Query parameters.}
@@ -177,7 +177,7 @@ createTableAsync/importTableAsync methods.}
 
 \item{\code{newComponentConfiguration(componentId, configurationId, name,
   description = "")}}{Create a new component configuration.
- Note that the configuration property must be put in a subsequent PUT call.
+Note that the configuration property must be put in a subsequent PUT call.
 \subsection{Parameters}{\itemize{
 \item{\code{configurationId} Configuration ID.}
 \item{\code{name} Name of the cconfiguration

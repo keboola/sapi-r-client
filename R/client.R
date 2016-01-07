@@ -1,6 +1,6 @@
 #' Client for working with Keboola Connection Storage API.
 #'
-#' @import httr methods aws.signature
+#' @import httr methods aws.signature data.table
 #' @exportClass SapiClient
 #' @export SapiClient
 SapiClient <- setRefClass(
@@ -102,7 +102,7 @@ SapiClient <- setRefClass(
         },
         
         genericGet = function(urlG, query = NULL) {
-            "Generic GET method.
+            "Generic POST method.
             \\subsection{Parameters}{\\itemize{
             \\item{\\code{urlG} Target URL.}
             \\item{\\code{query} Query parameters.}
@@ -367,7 +367,7 @@ SapiClient <- setRefClass(
             \\item{\\code{options} List with additional options.}
             }}
             \\subsection{Return Value}{String job ID}"
-            write.csv(df, file=fileName, row.names=FALSE)
+            write.csv(df, file = fileName, row.names = FALSE)
             fileId <- .self$uploadFile(fileName)
             # start writing job
             res <- .self$saveTableAsync(bucket, tableName, fileId, options)
@@ -427,7 +427,7 @@ SapiClient <- setRefClass(
                     } else {
                         colnames(df) <- columns
                     }
-                    df
+                    return(df)
                 }, error = function(e) {
                     stop(e$message)
                 }
@@ -686,7 +686,7 @@ SapiClient <- setRefClass(
         
         newComponentConfiguration = function(componentId, configurationId, name, description="") {
             "Create a new component configuration.
-             Note that the configuration property must be put in a subsequent PUT call.
+            Note that the configuration property must be put in a subsequent PUT call.
             \\subsection{Parameters}{\\itemize{
             \\item{\\code{configurationId} Configuration ID.}
             \\item{\\code{name} Name of the cconfiguration
@@ -708,11 +708,10 @@ SapiClient <- setRefClass(
                 stop(paste("error posting fle to sapi", e))
             }, warning = function(w) {
                 stop(paste("attempting save file warning recieved:", w$message))
-            }
-                        )
+            })
             .self$decodeResponse(resp)    
         },
-        
+            
         getComponentConfiguration = function(componentId, configId) {
             "Get KBC Component Configuration.
             \\subsection{Parameters}{\\itemize{
@@ -772,3 +771,4 @@ SapiClient <- setRefClass(
         }
     )
 )
+

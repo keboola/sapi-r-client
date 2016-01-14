@@ -26,6 +26,15 @@ Client for working with Keboola Connection Storage API.
 }}
 \subsection{Return Value}{List with bucket details.}}
 
+\item{\code{createConfigurationRow(componentId, configId, rowId, configuration = list())}}{Create a new component configuration row.
+\subsection{Parameters}{\itemize{
+\item{\code{componentId} Component ID.}
+\item{\code{configurationId} Configuration ID.}
+\item{\code{rowId} ID for the row}
+\item{\code{configuration} The configuration to be stored as the row.}
+}}
+\subsection{Return Value}{The component configuration row}}
+
 \item{\code{createCredentials(bucketId, credentialsName)}}{Create read-only redshift credentials for a given bucket.
 \subsection{Parameters}{\itemize{
 \item{\code{bucketId} Bucket ID.}
@@ -49,6 +58,14 @@ Client for working with Keboola Connection Storage API.
 \subsection{Parameters}{\itemize{
 \item{\code{componentId} ID of the component}
 \item{\code{configId} ID of the configuration}
+}}
+\subsection{Return Value}{TRUE}}
+
+\item{\code{deleteConfigurationRow(componentId, configId, rowId, configuration = list())}}{DELETE the provided component configuration row.
+\subsection{Parameters}{\itemize{
+\item{\code{componentId} ID of the component}
+\item{\code{configId} ID of the configuration}
+\item{\code{rowId} ID of the configurationRow}
 }}
 \subsection{Return Value}{TRUE}}
 
@@ -102,6 +119,14 @@ Client for working with Keboola Connection Storage API.
 \subsection{Parameters}{\itemize{
 \item{\code{componentId} ID of the component}
 \item{\code{configId} ID of the configuration}
+}}
+\subsection{Return Value}{List containing component configuration}}
+
+\item{\code{getComponentConfigurationRow(componentId, configId, rowId)}}{Get KBC Component Configuration Row.
+\subsection{Parameters}{\itemize{
+\item{\code{componentId} ID of the component}
+\item{\code{configId} ID of the configuration}
+\item{\code{rowId} ID of the configuration row}
 }}
 \subsection{Return Value}{List containing component configuration}}
 
@@ -233,6 +258,15 @@ Generally use the \code{saveTable} method
 \item{\code{tableId} Table ID (including bucket ID).}
 }}
 \subsection{Return Value}{TRUE or FALSE}}
+
+\item{\code{updateConfigurationRow(componentId, configId, rowId, configuration = list())}}{PUT the configuration property of the KBC Component Configuration Row.
+\subsection{Parameters}{\itemize{
+\item{\code{componentId} ID of the component}
+\item{\code{configId} ID of the configuration}
+\item{\code{rowId} ID of the row}
+\item{\code{configuration} the configuration property (should be of type list)}
+}}
+\subsection{Return Value}{list of the new component configuration}}
 
 \item{\code{uploadFile(dataFile, options = list())}}{Upload a file to AWS S3 bucket.
 (compression is not yet supported by this client)

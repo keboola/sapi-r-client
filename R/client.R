@@ -768,6 +768,85 @@ SapiClient <- setRefClass(
             } else {
                 TRUE
             }
+        },
+        
+        createConfigurationRow = function(componentId, configId, rowId, configuration = list()) {
+            "Create a new component configuration row.
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{componentId} Component ID.}
+            \\item{\\code{configurationId} Configuration ID.}
+            \\item{\\code{rowId} ID for the row}
+            \\item{\\code{configuration} The configuration to be stored as the row.}
+            }}
+            \\subsection{Return Value}{The component configuration row}"
+            tryCatch({
+                resp <- httr::POST(
+                    paste0(.self$url,"storage/components/", componentId, "/configs/", configId, "/rows"),
+                    httr::add_headers("X-StorageApi-Token" = .self$token),
+                    body = list(
+                        rowId=rowId,
+                        configuration=jsonlite::toJSON(configuration, auto_unbox=TRUE)
+                    )
+                )    
+            }, error = function(e) {
+                stop(paste("Error posting component", componentId, "configuration", configId, "row:", rowId," to sapi", e))
+            })
+            .self$decodeResponse(resp)
+        },
+        
+        updateConfigurationRow = function(componentId, configId, rowId, configuration = list()) {
+            "PUT the configuration property of the KBC Component Configuration Row.
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{componentId} ID of the component}
+            \\item{\\code{configId} ID of the configuration}
+            \\item{\\code{rowId} ID of the row}
+            \\item{\\code{configuration} the configuration property (should be of type list)}
+            }}
+            \\subsection{Return Value}{list of the new component configuration}"
+            resp <- httr::PUT(
+                paste0(.self$url,"storage/components/", componentId, "/configs/", configId, "/rows/", rowId),    
+                httr::add_headers("X-StorageApi-Token" = .self$token),
+                body = list(
+                    configuration=jsonlite::toJSON(configuration, auto_unbox=TRUE)
+                )
+            )    
+        }, 
+        
+        getComponentConfigurationRow = function(componentId, configId, rowId) {
+            "Get KBC Component Configuration Row.
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{componentId} ID of the component}
+            \\item{\\code{configId} ID of the configuration}
+            \\item{\\code{rowId} ID of the configuration row}
+            }}
+            \\subsection{Return Value}{List containing component configuration}"
+            .self$decodeResponse(
+                .self$get(paste0(.self$url,"storage/components/",componentId,"/configs/",configId, "/rows/", rowId))
+            )  
+        },
+        
+        deleteConfigurationRow = function(componentId, configId, rowId, configuration = list()) {
+            "DELETE the provided component configuration row.  
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{componentId} ID of the component}
+            \\item{\\code{configId} ID of the configuration}
+            \\item{\\code{rowId} ID of the configurationRow}
+            }}
+            \\subsection{Return Value}{TRUE}"
+            resp <- httr::DELETE(
+                paste0(.self$url,"storage/components/", componentId, "/configs/", configId, "/rows/", rowId),
+                httr::add_headers("X-StorageApi-Token" = .self$token)
+            )
+            if (!(resp$status_code == 204)) {
+                stop(paste0(
+                    resp$status_code, 
+                    " Error deleting component: ", componentId, 
+                    " configuration: ", configId, 
+                    " row: ", rowId,
+                    ". Server Response: ", .self$decodeResponse(resp)))
+            } else {
+                TRUE
+            }
         }
     )
 )

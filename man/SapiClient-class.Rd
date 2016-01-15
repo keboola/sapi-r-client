@@ -122,7 +122,7 @@ Client for working with Keboola Connection Storage API.
 }}
 \subsection{Return Value}{List containing component configuration}}
 
-\item{\code{getComponentConfigurationRow(componentId, configId, rowId)}}{Get KBC Component Configuration Row.
+\item{\code{getConfigurationRow(componentId, configId, rowId)}}{Get KBC Component Configuration Row.
 \subsection{Parameters}{\itemize{
 \item{\code{componentId} ID of the component}
 \item{\code{configId} ID of the configuration}
@@ -189,6 +189,13 @@ createTableAsync/importTableAsync methods.}
 \item{\code{options} List with additional options.}
 }}
 \subsection{Return Value}{List of buckets.}}
+
+\item{\code{listConfigurationRows(componentId, configId)}}{Get KBC Component Configuration Rows.
+\subsection{Parameters}{\itemize{
+\item{\code{componentId} ID of the component}
+\item{\code{configId} ID of the configuration}
+}}
+\subsection{Return Value}{List of component configuration rows}}
 
 \item{\code{listCredentials()}}{List read-only redshift credentials.
 \subsection{Return Value}{List with redshift credentials}}

@@ -812,7 +812,7 @@ SapiClient <- setRefClass(
             )    
         }, 
         
-        getComponentConfigurationRow = function(componentId, configId, rowId) {
+        getConfigurationRow = function(componentId, configId, rowId) {
             "Get KBC Component Configuration Row.
             \\subsection{Parameters}{\\itemize{
             \\item{\\code{componentId} ID of the component}
@@ -822,6 +822,18 @@ SapiClient <- setRefClass(
             \\subsection{Return Value}{List containing component configuration}"
             .self$decodeResponse(
                 .self$get(paste0(.self$url,"storage/components/",componentId,"/configs/",configId, "/rows/", rowId))
+            )  
+        },
+        
+        listConfigurationRows = function(componentId, configId) {
+            "Get KBC Component Configuration Rows.
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{componentId} ID of the component}
+            \\item{\\code{configId} ID of the configuration}
+            }}
+            \\subsection{Return Value}{List of component configuration rows}"
+            .self$decodeResponse(
+                .self$get(paste0(.self$url,"storage/components/",componentId,"/configs/",configId, "/rows"))
             )  
         },
         

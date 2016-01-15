@@ -232,9 +232,27 @@ test_that("componentConfiguration", {
     
     # put the configuration property
     config <- client$putComponentConfiguration(testComponent, testConfigId, testConfiguration)
-    print("putted config")
-    print(config)
     expect_equal(config$configuration, testConfiguration)
+    
+    testRowId <- "test-row"
+    # create a configuration row 
+    row <- client$createConfigurationRow(testComponent, testConfigId, testRowId, list(foo="bar", baz = c("foo", "barr")))
+    expect_equal(row$configuration$foo, "bar")
+    
+    # put a different configuration row
+    client$updateConfigurationRow(testComponent, testConfigId, testRowId, list(foo="baz", baz = c("foo", "barr")))
+    
+    # get configuration row
+    row <- client$getConfigurationRow(testComponent, testConfigId, testRowId)
+    expect_equal(row[[1]]$configuration$foo, "baz")
+    
+    # delete the configuration row
+    client$deleteConfigurationRow(testComponent, testConfigId, testRowId)
+    
+    # get a list of configuration rows
+    rows <- client$listConfigurationRows(testComponent, testConfigId) 
+    rowIds <- unlist(lapply(rows, function(row){ row$id }))
+    expect_false(testRowId %in% rowIds)
     
     # delete the configuration
     client$deleteComponentConfiguration(testComponent, testConfigId)

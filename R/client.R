@@ -41,7 +41,7 @@ SapiClient <- setRefClass(
             }}
             \\subsection{Return Value}{Response body - either list or string in case the body cannot be parsed as JSON.}"
             # decode response
-            content <- httr::content(response, as = "text")
+            content <- httr::content(response, as = "text", encoding = 'UTF-8')
             body <- NULL
             tryCatch({
               body <- jsonlite::fromJSON(content, simplifyVector = FALSE)
@@ -327,7 +327,7 @@ SapiClient <- setRefClass(
                     stop(paste("warning recieved creating table:", w$message))
                 }
             )
-            return(httr::content(resp))
+            return(httr::content(resp, encoding = 'UTF-8'))
         },
         
         importTableAsync = function(tableId, options=list()) {
@@ -354,7 +354,7 @@ SapiClient <- setRefClass(
                     stop(paste("Save file warning recieved: ", w$message))
                 }
             )
-            return(httr::content(response))
+            return(httr::content(response, encoding = 'UTF-8'))
         },
         
         saveTable = function(df, bucket, tableName, fileName="tmpfile.csv", options=list()) {
@@ -380,7 +380,7 @@ SapiClient <- setRefClass(
                 if (job$status == "success") {
                     break
                 } else if (job$status != "waiting" && job$status != "processing") {
-                    stop(paste("Unexpected Job status:", job$status))
+                    stop(paste0("Job status: ", job$status, ' - ', job$error$message, ' (', job$error$exceptionId, ')'))
                 }
                 Sys.sleep(0.5)
             }
@@ -408,7 +408,7 @@ SapiClient <- setRefClass(
                         if (job$status == "success") {
                             break
                         } else if (job$status != "waiting" && job$status != "processing") {
-                            stop(paste("Unexpected Job status:", job$status))
+                            stop(paste0("Job status: ", job$status, ' - ', job$error$message, ' (', job$error$exceptionId, ')'))
                         }
                         Sys.sleep(0.5)
                     }
@@ -593,7 +593,7 @@ SapiClient <- setRefClass(
 
             H <- do.call(httr::add_headers, headers)
             r <- httr::GET(url, H)
-            cat(httr::content(r, as = "text"), file = target, append = TRUE)
+            cat(httr::content(r, as = "text", encoding = 'UTF-8'), file = target, append = TRUE)
             NULL
         },
         
@@ -742,7 +742,7 @@ SapiClient <- setRefClass(
                     resp$status_code, 
                     " Error putting component: ", component, 
                     " configuration: ", configId, 
-                    ". Server Response: ", httr::content(resp, as = "text")))
+                    ". Server Response: ", httr::content(resp, as = "text", encoding = 'UTF-8')))
             } else {
                 .self$decodeResponse(resp)
             }

@@ -181,6 +181,31 @@ test_that("emptyRowTable", {
   expect_false(client$bucketExists(result$id))
 })
 
+test_that("createTableAlreadyExists", {
+    client <- SapiClient$new(
+        token = KBC_TOKEN,
+        url = KBC_URL
+    )
+    # check if our testing table and bucket exist, if so remove them
+    if (client$bucketExists("in.c-r_client_testing")) {
+        if (client$tableExists("in.c-r_client_testing.test_table")) {
+            client$deleteTable("in.c-r_client_testing.test_table")
+        }
+        client$deleteBucket("in.c-r_client_testing")
+    }
+    # make the bucket we will use for testing
+    result <- client$createBucket("r_client_testing","in","This bucket was created by the sapi R client test routine")
+    verifyBucketStructure(result)
+    
+    # create a table in our new bucket
+    df <- data.frame(ts_var = character(), actual_value = character(), run_id = character(), dummy = character())
+    tableId <- client$saveTable(df, 'in.c-r_client_testing', 'test_table')
+    expect_error(
+        tableId <- client$saveTable(df, 'in.c-r_client_testing', 'test_table'),
+        'already exists in bucket'
+    )
+})
+
 
 test_that("writeToNonExisingBucket", {
   client <- SapiClient$new(

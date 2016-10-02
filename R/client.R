@@ -859,6 +859,67 @@ SapiClient <- setRefClass(
             } else {
                 TRUE
             }
+        },
+        
+        createWorkspace = function(backend=NULL) {
+            "Create a new workspace. If backend not specified, project default backend will be used.
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{backend} Either 'redshift' or 'snowflake'.}
+            }}
+            \\subsection{Return Value}{The new workspace}"
+            postBody <- NULL
+            if (!is.null(backend)) {
+                postBody <- list(backend=backend) 
+            }
+            tryCatch({
+                resp <- httr::POST(
+                    paste0(.self$url,"storage/workspaces"),
+                    httr::add_headers("X-StorageApi-Token" = .self$token),
+                    body = postBody
+                )    
+            }, error = function(e) {
+                stop(paste("Error creating workspace", e))
+            })
+            .self$decodeResponse(resp)
+        },
+        
+        dropWorkspace = function(workspaceId) {
+            "DELETE the provided workspace.  
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{workspaceId} ID of the workspace}
+            }}
+            \\subsection{Return Value}{TRUE}"
+            resp <- httr::DELETE(
+                paste0(.self$url,"storage/workspaces/", workspaceId),
+                httr::add_headers("X-StorageApi-Token" = .self$token)
+            )
+            if (!(resp$status_code == 204)) {
+                stop(paste0(
+                    resp$status_code, 
+                    " Error deleting workspace: ", workspaceId, 
+                    ". Server Response: ", .self$decodeResponse(resp)))
+            } else {
+                TRUE
+            }
+        },
+        
+        getWorkspace = function(workspaceId) {
+            "Get KBC Workspace.
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{workspaceId} ID of the workspace}
+            }}
+            \\subsection{Return Value}{List containing workspace object}"
+            .self$decodeResponse(
+                .self$get(paste0(.self$url,"storage/workspaces/",workspaceId))
+            )
+        },
+        
+        listWorkspaces = function() {
+            "Get KBC Workspaces.
+            \\subsection{Return Value}{List of workspace}"
+            .self$decodeResponse(
+                .self$get(paste0(.self$url,"storage/workspaces/"))
+            )
         }
     )
 )

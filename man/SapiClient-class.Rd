@@ -42,6 +42,12 @@ Client for working with Keboola Connection Storage API.
 }}
 \subsection{Return Value}{List with redshift credentials}}
 
+\item{\code{createWorkspace(backend = NULL)}}{Create a new workspace. If backend not specified, project default backend will be used.
+\subsection{Parameters}{\itemize{
+\item{\code{backend} Either 'redshift' or 'snowflake'.}
+}}
+\subsection{Return Value}{The new workspace}}
+
 \item{\code{decodeResponse(response)}}{Internal method to process API response.
 \subsection{Parameters}{\itemize{
 \item{\code{response} List as returned from httr POST/GET method.}
@@ -78,6 +84,12 @@ Client for working with Keboola Connection Storage API.
 \item{\code{deleteTable(tableId)}}{Delete a table.
 \subsection{Parameters}{\itemize{
 \item{\code{tableId} String ID of the table (including bucket ID).}
+}}
+\subsection{Return Value}{TRUE}}
+
+\item{\code{dropWorkspace(workspaceId)}}{DELETE the provided workspace.
+\subsection{Parameters}{\itemize{
+\item{\code{workspaceId} ID of the workspace}
 }}
 \subsection{Return Value}{TRUE}}
 
@@ -162,6 +174,12 @@ createTableAsync/importTableAsync methods.}
 }}
 \subsection{Return Value}{List with table details.}}
 
+\item{\code{getWorkspace(workspaceId)}}{Get KBC Workspace.
+\subsection{Parameters}{\itemize{
+\item{\code{workspaceId} ID of the workspace}
+}}
+\subsection{Return Value}{List containing workspace object}}
+
 \item{\code{importTable(tableId, options = list())}}{Import a table from Storage into R. Wrapper for the \code{importTableAsync} function.
 \subsection{Parameters}{\itemize{
 \item{\code{tableId} String table ID (including bucket ID).}
@@ -206,6 +224,9 @@ createTableAsync/importTableAsync methods.}
 \item{\code{options} List with additional options.}
 }}
 \subsection{Return Value}{List of tables.}}
+
+\item{\code{listWorkspaces()}}{Get KBC Workspaces.
+\subsection{Return Value}{List of workspace}}
 
 \item{\code{newComponentConfiguration(componentId, configurationId, name,
   description = "")}}{Create a new component configuration.

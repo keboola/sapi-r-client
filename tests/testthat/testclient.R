@@ -284,3 +284,49 @@ test_that("componentConfiguration", {
     # check to see that we've made it this far (means delete was successful)
     expect_true(TRUE)
 })
+
+test_that("workspaces", {
+    client <- SapiClient$new(
+        token = KBC_TOKEN,
+        url = KBC_URL
+    )
+    
+    workspaces <- client$listWorkspaces()
+    # CLEAN UP before start: Drop all workspaces that 
+    lapply(workspaces,function(workspace) {
+        client$dropWorkspace(workspace$id)
+    })
+    
+    # create a snowflake workspace
+    workspace <- client$createWorkspace(backend="snowflake")
+    expect_false(is.null(workspace$id))  
+    expect_false(is.null(workspace$created))
+    expect_equal("snowflake",workspace$connection$backend)
+    expect_false(is.null(workspace$connection$host))
+    expect_false(is.null(workspace$connection$warehouse))
+    expect_false(is.null(workspace$connection$database))
+    expect_false(is.null(workspace$connection$schema))
+    expect_false(is.null(workspace$connection$user))
+    expect_false(is.null(workspace$connection$password))
+    
+    # get the just created workspace
+    ws <- client$getWorkspace(workspace$id)
+    expect_equal(ws$id, workspace$id)
+    expect_equal(ws$created, workspace$created)
+    expect_equal(ws$connection$host,  workspace$connection$host)
+    expect_equal(ws$connection$warehouse,  workspace$connection$warehouse)
+    expect_equal(ws$connection$user,  workspace$connection$user)
+    # password should be only on create
+    expect_true(is.null(ws$password))
+    
+    # drop the workspace
+    res <- client$dropWorkspace(ws$id)
+    expect_true(res)
+    
+    tryCatch({
+        # workspace no longer exists, should throw 404
+        client$getWorkspace(ws$id)
+    }, error = function(e) {
+        expect_false(is.null(e))
+    })
+})

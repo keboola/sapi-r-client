@@ -734,6 +734,7 @@ SapiClient <- setRefClass(
             \\subsection{Return Value}{list of the new component configuration}"
             resp <- httr::PUT(
                 paste0(.self$url,"storage/components/",componentId,"/configs/",configId),
+                encode="form",
                 httr::add_headers("X-StorageApi-Token" = .self$token),
                 body = list(configuration = jsonlite::toJSON(configuration, auto_unbox=TRUE))
             ) 

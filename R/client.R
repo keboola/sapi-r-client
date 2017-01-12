@@ -203,10 +203,10 @@ SapiClient <- setRefClass(
             \\item{\\code{list} File info list object (see \\code{getFileInfo())}.}
             }}
             \\subsection{Return Value}{Data frame with file contents}"
+            target <- tempfile('s3dld-')
             if (fileInfo$isSliced) {
                 response <- httr::GET(fileInfo$url)
                 manifest <- .self$decodeResponse(response)
-                target <- tempfile('s3dld-')
                 for (i in seq_along(manifest$entries)) {
                     fullPath <- manifest$entries[[i]]$url
                     splittedPath <- strsplit(fullPath, "/")

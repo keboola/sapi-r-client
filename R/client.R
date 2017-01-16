@@ -234,8 +234,13 @@ SapiClient <- setRefClass(
             df <- data.frame()
             tryCatch(
                 {
-                    df <- data.table::fread(target, header = FALSE)
-                    # in case of empty file, fread causes error, silence it and continue with empty df
+                    if (fileInfo$isSliced) {
+                        df <- data.table::fread(target, header = FALSE)
+                        # in case of empty file, fread causes error, silence it and continue with empty df
+                    } else {
+                        # header is included in unsliced downloads
+                        df <- data.table::fread(target, header = TRUE)
+                    }
                 }, error = function(e) {}
             )
             return(df)

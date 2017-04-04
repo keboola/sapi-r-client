@@ -154,7 +154,7 @@ Client for working with Keboola Connection Storage API.
 }}
 \subsection{Return Value}{Data frame with file contents}}
 
-\item{\code{getFileInfo(fileId, federationToken = TRUE)}}{Get information about a file, including credentials.
+\item{\code{getFileInfo(fileId, federationToken = 1)}}{Get information about a file, including credentials.
 \subsection{Parameters}{\itemize{
 \item{\code{fileId} Storage file ID.}
 \item{\code{federationToken} Use federation token?.}

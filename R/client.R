@@ -313,7 +313,7 @@ SapiClient <- setRefClass(
                 name = tableName,
                 delimiter = if ("delimiter" %in% names(opts)) opts$delimeter else ",",
                 enclosure = if ("enclosure" %in% names(opts)) opts$enclosure else '"',
-                escapedBy = if ("escapedBy" %in% names(opts)) opts$delimeter else "",
+                escapedBy = if ("escapedBy" %in% names(opts)) opts$escapedBy else NULL,
                 primaryKey = if ("primaryKey" %in% names(opts)) opts$primaryKey else NULL,
                 dataFileId = fileId
             )

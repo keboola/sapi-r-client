@@ -182,7 +182,7 @@ SapiClient <- setRefClass(
             .self$decodeResponse(.self$get(url))
         },
         
-        getFileInfo = function(fileId, federationToken = TRUE) {
+        getFileInfo = function(fileId, federationToken = 1) {
             "Get information about a file, including credentials.
             \\subsection{Parameters}{\\itemize{
             \\item{\\code{fileId} Storage file ID.}
@@ -315,7 +315,6 @@ SapiClient <- setRefClass(
                 enclosure = if ("enclosure" %in% names(opts)) opts$enclosure else '"',
                 escapedBy = if ("escapedBy" %in% names(opts)) opts$delimeter else "",
                 primaryKey = if ("primaryKey" %in% names(opts)) opts$primaryKey else NULL,
-                transactional = if ("transactional" %in% names(opts)) ? opts$transactional else FALSE,
                 dataFileId = fileId
             )
           
@@ -344,7 +343,7 @@ SapiClient <- setRefClass(
             \\subsection{Return Value}{URL to ping for table creation status check.}"
             opts <- .self$prepareOptions(options)
             if (!("federationToken" %in% names(opts))) {
-                opts$federationToken = TRUE
+                opts$federationToken = 1
             }
             response <- tryCatch(
                 {

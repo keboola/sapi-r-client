@@ -37,6 +37,8 @@ bucket <- client$createBucket("new_bucket","in","A brand new Bucket!")
 
 # create a table
 table <- client$saveTable(myDataFrame, bucket$id, "new_table")
+# note: as of version 0.2.0 if the table exists it will be over-written unless the incremental option is specified
+table <- client$saveTable(myDataFrame, bucket$id, "existing_table", options = list(incremental = 1))
 
 # import a table
 mydata <- client$importTable('in.c-my_bucket.my_table')

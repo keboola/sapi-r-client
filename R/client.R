@@ -319,7 +319,7 @@ SapiClient <- setRefClass(
                 enclosure = if ("enclosure" %in% names(opts)) opts$enclosure else '"',
                 escapedBy = if ("escapedBy" %in% names(opts)) opts$escapedBy else NULL,
                 primaryKey = if ("primaryKey" %in% names(opts)) opts$primaryKey else NULL,
-                incremental = if ("incremental" %in% names(opts)) opts$incremental else 0,
+                incremental = if ("incremental" %in% names(opts)) opts$incremental else NULL,
                 dataFileId = fileId
             )
           
@@ -396,7 +396,11 @@ SapiClient <- setRefClass(
             # if we got this far the write was successful
             # remove temporary file
             file.remove(fileName)
-            job$results$id
+            if (!is.null(job$results$id)) {
+                job$results$id
+            } else {
+                paste0(bucket, ".", tableName)
+            }
         },
         
         importTable = function(tableId, options = list()) {

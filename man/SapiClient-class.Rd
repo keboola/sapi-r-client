@@ -2,8 +2,8 @@
 % Please edit documentation in R/client.R
 \docType{class}
 \name{SapiClient-class}
-\alias{SapiClient}
 \alias{SapiClient-class}
+\alias{SapiClient}
 \title{Client for working with Keboola Connection Storage API.}
 \description{
 Client for working with Keboola Connection Storage API.

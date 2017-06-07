@@ -181,32 +181,6 @@ test_that("emptyRowTable", {
   expect_false(client$bucketExists(result$id))
 })
 
-test_that("createTableAlreadyExists", {
-    client <- SapiClient$new(
-        token = KBC_TOKEN,
-        url = KBC_URL
-    )
-    # check if our testing table and bucket exist, if so remove them
-    if (client$bucketExists("in.c-r_client_testing")) {
-        if (client$tableExists("in.c-r_client_testing.test_table")) {
-            client$deleteTable("in.c-r_client_testing.test_table")
-        }
-        client$deleteBucket("in.c-r_client_testing")
-    }
-    # make the bucket we will use for testing
-    result <- client$createBucket("r_client_testing","in","This bucket was created by the sapi R client test routine")
-    verifyBucketStructure(result)
-    
-    # create a table in our new bucket
-    df <- data.frame(ts_var = character(), actual_value = character(), run_id = character(), dummy = character())
-    tableId <- client$saveTable(df, 'in.c-r_client_testing', 'test_table')
-    expect_error(
-        tableId <- client$saveTable(df, 'in.c-r_client_testing', 'test_table'),
-        'already exists in bucket'
-    )
-})
-
-
 test_that("writeToNonExisingBucket", {
   client <- SapiClient$new(
     token = KBC_TOKEN,
@@ -329,4 +303,34 @@ test_that("workspaces", {
     }, error = function(e) {
         expect_false(is.null(e))
     })
+})
+
+test_that("incremental_load", {
+    client <- SapiClient$new(
+        token = KBC_TOKEN,
+        url = KBC_URL
+    )
+    # check if our testing table and bucket exist, if so remove them
+    if (client$bucketExists("in.c-r_client_testing")) {
+        if (client$tableExists("in.c-r_client_testing.test_table")) {
+            client$deleteTable("in.c-r_client_testing.test_table")
+        }
+        client$deleteBucket("in.c-r_client_testing")
+    }
+    # make the bucket we will use for testing
+    result <- client$createBucket("r_client_testing","in","This bucket was created by the sapi R client test routine")
+    verifyBucketStructure(result)
+    
+    # create a table in our new bucket
+    df <- data.frame(ts_var = '201309', actual_value = '20348832.0000000000', expected_value = '15190371.0000000000', run_id = '130865113')
+    tableId <- client$saveTable(df, 'in.c-r_client_testing', 'test_table', 'tmpfile.csv', list(primaryKey = c("ts_var"), incremental = 1)) 
+    
+    retrieveTable <- client$importTable(tableId)
+    expect_equal(1, nrow(df))
+    
+    df2 <- data.frame(ts_var = '201310', actual_value = '444.0000000000', expected_value = '152000.0000000000', run_id = '13086')
+    tableId <- client$saveTable(df2, 'in.c-r_client_testing', 'test_table', 'tmpfile.csv', list(primaryKey = c("ts_var"), incremental = 1)) 
+    
+    retrieveTable <- client$importTable(tableId)
+    expect_equal(2, nrow(retrieveTable))
 })

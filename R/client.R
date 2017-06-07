@@ -305,8 +305,12 @@ SapiClient <- setRefClass(
             \\item{\\code{opts} List with additional parameters.}
             }}
             \\subsection{Return Value}{URL to ping for table creation status check.}"
+            
             posturl <- paste(.self$url,"storage/buckets/", bucket, "/tables-async", sep="")
-          
+            tableId <- paste0(bucket,".",tableName)  
+            if (.self$tableExists(tableId)) {
+                posturl <- paste(.self$url,"storage/tables/", tableId, "/import-async", sep="")        
+            }
             #prepare our options
             options = list(
                 bucketId = bucket,
@@ -315,6 +319,7 @@ SapiClient <- setRefClass(
                 enclosure = if ("enclosure" %in% names(opts)) opts$enclosure else '"',
                 escapedBy = if ("escapedBy" %in% names(opts)) opts$escapedBy else NULL,
                 primaryKey = if ("primaryKey" %in% names(opts)) opts$primaryKey else NULL,
+                incremental = if ("incremental" %in% names(opts)) opts$incremental else 0,
                 dataFileId = fileId
             )
           

@@ -934,6 +934,26 @@ SapiClient <- setRefClass(
             .self$decodeResponse(
                 .self$get(paste0(.self$url,"storage/workspaces/"))
             )
+        },
+        
+        listFiles = function(tags=NULL, limit=NULL)
+        {
+            "Get list of fileinfo objects about files in sapi.
+            \\subsection{Parameters}{\\itemize{
+                \\item{\\code{tags} list of tags}
+                \\item{\\code{limi} limit of # of files to return. SAPI default is 100}
+            }}
+            \\subsection{Return Value}{List of workspace}"
+            options = list()
+            if (!(is.null(tags))) {
+                options[["tags"]] <- tags
+            }
+            if (!(is.null(limit))) {
+                options[["limit"]] <- limit
+            }
+            .self$decodeResponse(
+                .self$get(paste0(.self$url, "storage/files"), options)
+            )
         }
     )
 )

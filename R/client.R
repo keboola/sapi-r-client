@@ -977,6 +977,18 @@ SapiClient <- setRefClass(
                 }
             }
             .self$uploadFile(fileName, options=options)
+        },
+        
+        loadFile = function(fileId, options)
+        {
+            "load a file from SAPI into your current R session.
+            \\subsection{Parameters}{\\itemize{
+                \\item{\\code{fileId} the id of the file to load (hint: use listFiles to find the id of the file you want to load)}
+            }}
+            \\subsection{Return Value}{the contents of the file}"
+            
+            fileInfo <- .self$getFileInfo(fileId)
+            .self$getFileData(fileInfo)
         }
     )
 )

@@ -197,6 +197,26 @@ SapiClient <- setRefClass(
             )
         },
         
+        getFileDataIntoDataFrame = function(fileInfo)
+        {
+            target <- .self$getFileData(fileInfo)
+            df <- data.frame()
+            tryCatch(
+                {
+                    if (fileInfo$isSliced) {
+                        df <- data.table::fread(target, header = FALSE)
+                        # in case of empty file, fread causes error, silence it and continue with empty df
+                    } else {
+                        # header is included in unsliced downloads
+                        df <- data.table::fread(target, header = TRUE)
+                    }
+                }, error = function(e) {
+                    write(paste("error reading from", target, " most likely the file was empty"), stderr())
+                }
+            )
+            return(df)
+        },
+        
         getFileData = function(fileInfo) {
             "Get a file from the S3 storage
             \\subsection{Parameters}{\\itemize{
@@ -231,19 +251,7 @@ SapiClient <- setRefClass(
                     target
                 )
             }
-            df <- data.frame()
-            tryCatch(
-                {
-                    if (fileInfo$isSliced) {
-                        df <- data.table::fread(target, header = FALSE)
-                        # in case of empty file, fread causes error, silence it and continue with empty df
-                    } else {
-                        # header is included in unsliced downloads
-                        df <- data.table::fread(target, header = TRUE)
-                    }
-                }, error = function(e) {}
-            )
-            return(df)
+            target
         },
         
         uploadFile = function(dataFile, options = list()) {
@@ -432,7 +440,7 @@ SapiClient <- setRefClass(
                         columns <- unlist(table$columns)
                     }
                     fileInfo <- .self$getFileInfo(job$result$file$id)
-                    df <- .self$getFileData(fileInfo)
+                    df <- .self$getFileDataIntoDataFrame(fileInfo)
                     if (nrow(df) == 0) {
                         # data frame is empty and it has unfortunately already been truncated
                         # to have no columns either - make a new empty DF, but with the right columns
@@ -988,6 +996,7 @@ SapiClient <- setRefClass(
             \\subsection{Return Value}{the contents of the file}"
             
             fileInfo <- .self$getFileInfo(fileId)
+            
             .self$getFileData(fileInfo)
         },
         

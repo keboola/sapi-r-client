@@ -64,7 +64,9 @@ client$listFiles(tags=c("my-tag")
 newFileId <- client$putFile("path/to/my/file.whatever", tags=c("my-tag", "our-tag"))
 
 # download a file from sapi
-myFileContents <- client$loadFile(newFileId)
+myFilePath <- client$loadFile(newFileId)
+# now you can read it however you like (ex csv)
+myFileContents <- read.csv(myFilePath)
 
 # delete a file 
 client$deleteFile(newFileId)

@@ -352,9 +352,9 @@ test_that("fileLoad", {
     
     expect_equal(length(files), 1)
     
-    file <- client$loadFile(files[[1]]$id)
+    filePath <- client$loadFile(files[[1]]$id)
     
-    expect_equal(file, fread(testFilePath))
+    expect_equal(fread(filePath), fread(testFilePath))
     
     client$deleteFile(files[[1]]$id)
     files <- client$listFiles(tags=tags)

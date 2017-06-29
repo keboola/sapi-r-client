@@ -334,3 +334,26 @@ test_that("incremental_load", {
     retrieveTable <- client$importTable(tableId)
     expect_equal(2, nrow(retrieveTable))
 })
+
+test_that("fileLoad", {
+    client <- SapiClient$new(
+        token = KBC_TOKEN,
+        url = KBC_URL
+    )
+    
+    # create a file in our storage
+    testFilePath <- "tests/testthat/tmpfile.csv"
+    tags <- c("sapi-r-client", "bigFunTestFile")
+    client$putFile(testFilePath, tags=tags)
+    files <- client$listFiles(tags=tags)
+    
+    expect_equal(length(files), 1)
+    
+    file <- client$loadFile(files[[1]]$id)
+    
+    expect_equal(file, fread(testFilePath))
+    
+    client$deleteFile(files[[1]]$id)
+    files <- client$listFiles(tags=tags)
+    expect_equal(0, length(files))
+})

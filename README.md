@@ -19,10 +19,9 @@ devtools::install_github("cloudyr/aws.signature")
 
 # install the sapi client package
 devtools::install_github("keboola/sapi-r-client")
-library('keboola.sapi.r.client')
 
 # load the library (dependencies will be loaded automatically)
-library(keboola.sapi.r.client)
+library("keboola.sapi.r.client")
 
 # create client
 client <- SapiClient$new(

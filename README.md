@@ -58,6 +58,17 @@ client$deleteTable(table$id)
 # delete bucket
 client$deleteBucket(bucket$id)
 
+# list files with tag "my-tag"
+client$listFiles(tags=c("my-tag")
+
+# upload a file to sapi with tags "my-tag" and "our-tag"
+newFileId <- client$putFile("path/to/my/file.whatever", tags=c("my-tag", "our-tag"))
+
+# download a file from sapi
+myFileContents <- client$loadFile(newFileId)
+
+# delete a file 
+client$deleteFile(newFileId)
 ```
 
 The only required argument to create a client is a valid Storage API token.

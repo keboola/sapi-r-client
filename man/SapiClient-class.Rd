@@ -81,6 +81,12 @@ Client for working with Keboola Connection Storage API.
 }}
 \subsection{Return Value}{TRUE}}
 
+\item{\code{deleteFile(fileId)}}{load a file from SAPI into your current R session.
+\subsection{Parameters}{\itemize{
+    \item{\code{fileId} the id of the file to delete}
+}}
+\subsection{Return Value}{TRUE}}
+
 \item{\code{deleteTable(tableId)}}{Delete a table.
 \subsection{Parameters}{\itemize{
 \item{\code{tableId} String ID of the table (including bucket ID).}
@@ -218,6 +224,14 @@ createTableAsync/importTableAsync methods.}
 \item{\code{listCredentials()}}{List read-only redshift credentials.
 \subsection{Return Value}{List with redshift credentials}}
 
+\item{\code{listFiles(tags = NULL, limit = NULL, offset = NULL)}}{Get list of fileinfo objects about files in sapi.
+\subsection{Parameters}{\itemize{
+    \item{\code{tags} list of tags}
+    \item{\code{limi} limit of # of files to return. SAPI default is 100}
+    \item{\code{offset} which page of results to return, SAPI default is 0 (first page). }
+}}
+\subsection{Return Value}{List of fileInfo objects}}
+
 \item{\code{listTables(bucket = NULL, options = list())}}{Get a list of all tables.
 \subsection{Parameters}{\itemize{
 \item{\code{bucket} Bucket ID (if empty, list all tables).}
@@ -227,6 +241,12 @@ createTableAsync/importTableAsync methods.}
 
 \item{\code{listWorkspaces()}}{Get KBC Workspaces.
 \subsection{Return Value}{List of workspace}}
+
+\item{\code{loadFile(fileId, options)}}{load a file from SAPI into your current R session.
+\subsection{Parameters}{\itemize{
+    \item{\code{fileId} the id of the file to load (hint: use listFiles to find the id of the file you want to load)}
+}}
+\subsection{Return Value}{the contents of the file}}
 
 \item{\code{newComponentConfiguration(componentId, configurationId, name,
   description = "")}}{Create a new component configuration.
@@ -251,6 +271,13 @@ Note that the configuration property must be put in a subsequent PUT call.
 \item{\code{configuration} the configuration property (should be of type list)}
 }}
 \subsection{Return Value}{list of the new component configuration}}
+
+\item{\code{putFile(fileName, tags = NULL)}}{Get list of fileinfo objects about files in sapi.
+\subsection{Parameters}{\itemize{
+    \item{\code{fileName} fileName including path if file not in the current directory}
+    \item{\code{tags} tags to describe the file}
+}}
+\subsection{Return Value}{fileId of the created file}}
 
 \item{\code{s3GET(region, url, credentials, target)}}{Get a file (or file chunk) from AWS S3 storage.
 \subsection{Parameters}{\itemize{

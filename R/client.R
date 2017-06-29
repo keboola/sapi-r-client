@@ -934,6 +934,82 @@ SapiClient <- setRefClass(
             .self$decodeResponse(
                 .self$get(paste0(.self$url,"storage/workspaces/"))
             )
+        },
+        
+        listFiles = function(tags=NULL, limit=NULL, offset=NULL)
+        {
+            "Get list of fileinfo objects about files in sapi.
+            \\subsection{Parameters}{\\itemize{
+                \\item{\\code{tags} list of tags}
+                \\item{\\code{limi} limit of # of files to return. SAPI default is 100}
+                \\item{\\code{offset} which page of results to return, SAPI default is 0 (first page). }
+            }}
+            \\subsection{Return Value}{List of fileInfo objects}"
+            options = list()
+            if (!(is.null(tags))) {
+                for (i in 1:length(tags)) {
+                    options[[paste0("tags[",i-1,"]")]] <- tags[i]  
+                }
+            }
+            if (!(is.null(limit))) {
+                options[["limit"]] <- limit
+            }
+            if (!(is.null(offset))) {
+                options[["offset"]] <- offset
+            }
+            .self$decodeResponse(
+                .self$get(paste0(.self$url, "storage/files"), options)
+            )
+        },
+        
+        putFile = function(fileName, tags=NULL)
+        {
+            "Get list of fileinfo objects about files in sapi.
+            \\subsection{Parameters}{\\itemize{
+                \\item{\\code{fileName} fileName including path if file not in the current directory}
+                \\item{\\code{tags} tags to describe the file}
+            }}
+            \\subsection{Return Value}{fileId of the created file}"
+            options = list()
+            if (!(is.null(tags))) {
+                for (i in 1:length(tags)) {
+                    options[[paste0("tags[",i-1,"]")]] <- tags[i]  
+                }
+            }
+            .self$uploadFile(fileName, options=options)
+        },
+        
+        loadFile = function(fileId, options)
+        {
+            "load a file from SAPI into your current R session.
+            \\subsection{Parameters}{\\itemize{
+                \\item{\\code{fileId} the id of the file to load (hint: use listFiles to find the id of the file you want to load)}
+            }}
+            \\subsection{Return Value}{the contents of the file}"
+            
+            fileInfo <- .self$getFileInfo(fileId)
+            .self$getFileData(fileInfo)
+        },
+        
+        deleteFile = function(fileId)
+        {
+            "load a file from SAPI into your current R session.
+            \\subsection{Parameters}{\\itemize{
+                \\item{\\code{fileId} the id of the file to delete}
+            }}
+            \\subsection{Return Value}{TRUE}"
+            resp <- httr::DELETE(
+                paste0(.self$url,"storage/files/", fileId),
+                httr::add_headers("X-StorageApi-Token" = .self$token)
+            )
+            if (!(resp$status_code == 204)) {
+                stop(paste0(
+                    resp$status_code, 
+                    " Error deleting file: ", fileId, 
+                    ". Server Response: ", .self$decodeResponse(resp)))
+            } else {
+                TRUE
+            }
         }
     )
 )

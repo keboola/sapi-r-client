@@ -944,7 +944,7 @@ SapiClient <- setRefClass(
                 \\item{\\code{limi} limit of # of files to return. SAPI default is 100}
                 \\item{\\code{offset} which page of results to return, SAPI default is 0 (first page). }
             }}
-            \\subsection{Return Value}{List of workspace}"
+            \\subsection{Return Value}{List of fileInfo objects}"
             options = list()
             if (!(is.null(tags))) {
                 for (i in 1:length(tags)) {
@@ -960,6 +960,23 @@ SapiClient <- setRefClass(
             .self$decodeResponse(
                 .self$get(paste0(.self$url, "storage/files"), options)
             )
+        },
+        
+        putFile = function(fileName, tags=NULL)
+        {
+            "Get list of fileinfo objects about files in sapi.
+            \\subsection{Parameters}{\\itemize{
+                \\item{\\code{fileName} fileName including path if file not in the current directory}
+                \\item{\\code{tags} tags to describe the file}
+            }}
+            \\subsection{Return Value}{fileId of the created file}"
+            options = list()
+            if (!(is.null(tags))) {
+                for (i in 1:length(tags)) {
+                    options[[paste0("tags[",i-1,"]")]] <- tags[i]  
+                }
+            }
+            .self$uploadFile(fileName, options=options)
         }
     )
 )

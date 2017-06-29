@@ -989,6 +989,27 @@ SapiClient <- setRefClass(
             
             fileInfo <- .self$getFileInfo(fileId)
             .self$getFileData(fileInfo)
+        },
+        
+        deleteFile = function(fileId)
+        {
+            "load a file from SAPI into your current R session.
+            \\subsection{Parameters}{\\itemize{
+                \\item{\\code{fileId} the id of the file to delete}
+            }}
+            \\subsection{Return Value}{TRUE}"
+            resp <- httr::DELETE(
+                paste0(.self$url,"storage/files/", fileId),
+                httr::add_headers("X-StorageApi-Token" = .self$token)
+            )
+            if (!(resp$status_code == 204)) {
+                stop(paste0(
+                    resp$status_code, 
+                    " Error deleting file: ", fileId, 
+                    ". Server Response: ", .self$decodeResponse(resp)))
+            } else {
+                TRUE
+            }
         }
     )
 )

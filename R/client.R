@@ -211,7 +211,7 @@ SapiClient <- setRefClass(
                         df <- data.table::fread(target, header = TRUE)
                     }
                 }, error = function(e) {
-                    write(paste("error reading from", target, " most likely the file was empty"), stderr())
+                    write(paste("error reading from", target, " most likely the file was empty: ", e), stderr())
                 }
             )
             return(df)

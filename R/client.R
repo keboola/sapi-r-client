@@ -936,20 +936,26 @@ SapiClient <- setRefClass(
             )
         },
         
-        listFiles = function(tags=NULL, limit=NULL)
+        listFiles = function(tags=NULL, limit=NULL, offset=NULL)
         {
             "Get list of fileinfo objects about files in sapi.
             \\subsection{Parameters}{\\itemize{
                 \\item{\\code{tags} list of tags}
                 \\item{\\code{limi} limit of # of files to return. SAPI default is 100}
+                \\item{\\code{offset} which page of results to return, SAPI default is 0 (first page). }
             }}
             \\subsection{Return Value}{List of workspace}"
             options = list()
             if (!(is.null(tags))) {
-                options[["tags"]] <- tags
+                for (i in 1:length(tags)) {
+                    options[[paste0("tags[",i-1,"]")]] <- tags[i]  
+                }
             }
             if (!(is.null(limit))) {
                 options[["limit"]] <- limit
+            }
+            if (!(is.null(offset))) {
+                options[["offset"]] <- offset
             }
             .self$decodeResponse(
                 .self$get(paste0(.self$url, "storage/files"), options)

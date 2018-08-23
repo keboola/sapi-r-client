@@ -28,6 +28,15 @@ verifyTableStructure <- function(table) {
   expect_false(is.null(table$isAlias)) 
 }
 
+createTestBucket <- function(client) {
+    client$createBucket(
+        "r_client_testing",
+        "in",
+        "This bucket was created by the sapi R client test routine",
+        backend="snowflake"
+    )
+}
+
 test_that("verifyToken", {
     client <- SapiClient$new(
         token = KBC_TOKEN,
@@ -71,7 +80,7 @@ test_that("createAndDeleteMethods", {
     client$deleteBucket("in.c-r_client_testing")
   }
   # make the bucket we will use for testing
-  result <- client$createBucket("r_client_testing","in","This bucket was created by the sapi R client test routine")
+  result <- createTestBucket(client)
   verifyBucketStructure(result)
   
   # create a table in our new bucket
@@ -119,7 +128,7 @@ test_that("oneRowTable", {
     client$deleteBucket("in.c-r_client_testing")
   }
   # make the bucket we will use for testing
-  result <- client$createBucket("r_client_testing","in","This bucket was created by the sapi R client test routine")
+  result <- createTestBucket(client)
   verifyBucketStructure(result)
   
   # create a table in our new bucket
@@ -157,7 +166,7 @@ test_that("emptyRowTable", {
     client$deleteBucket("in.c-r_client_testing")
   }
   # make the bucket we will use for testing
-  result <- client$createBucket("r_client_testing","in","This bucket was created by the sapi R client test routine")
+  result <- createTestBucket(client)
   verifyBucketStructure(result)
   
   # create a table in our new bucket
@@ -194,7 +203,7 @@ test_that("writeToNonExisingBucket", {
     client$deleteBucket("in.c-r_client_testing")
   }
   # make the bucket we will use for testing
-  result <- client$createBucket("r_client_testing","in","This bucket was created by the sapi R client test routine")
+  result <- createTestBucket(client)
   verifyBucketStructure(result)
   
   # create a table in our new bucket
@@ -318,7 +327,7 @@ test_that("incremental_load", {
         client$deleteBucket("in.c-r_client_testing")
     }
     # make the bucket we will use for testing
-    result <- client$createBucket("r_client_testing","in","This bucket was created by the sapi R client test routine")
+    result <- createTestBucket(client)
     verifyBucketStructure(result)
     
     # create a table in our new bucket

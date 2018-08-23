@@ -199,22 +199,53 @@ SapiClient <- setRefClass(
         
         getFileDataIntoDataFrame = function(fileInfo)
         {
-            target <- .self$getFileData(fileInfo)
+            data <- .self$getFileData(fileInfo)
             df <- data.frame()
             tryCatch(
                 {
                     if (fileInfo$isSliced) {
-                        df <- data.table::fread(target, header = FALSE)
+                        df <- data.table::fread(input=data, header = FALSE)
                         # in case of empty file, fread causes error, silence it and continue with empty df
                     } else {
                         # header is included in unsliced downloads
-                        df <- data.table::fread(target, header = TRUE)
+                        df <- data.table::fread(input=data, header = TRUE)
                     }
                 }, error = function(e) {
-                    write(paste("error reading from", target, " most likely the file was empty: ", e), stderr())
+                    write(paste("error reading from", data, " most likely the file was empty: ", e), stderr())
                 }
             )
             return(df)
+        },
+        
+        getS3Object = function(key, fileInfo) {
+            "Get a file from the S3 storage
+            \\subsection{Parameters}{\\itemize{
+            \\iten{\\code{key} Object Key to retrieve}
+            \\item{\\code{list} File info list object (see \\code{getFileInfo())}.}
+            }}
+            \\subsection{Return Value}{Data frame with file contents}"
+            objectExists <- object_exists(
+                object = key,
+                bucket = fileInfo$s3Path$bucket, 
+                region = fileInfo$region,
+                key = fileInfo$credentials$AccessKeyId,
+                secret = fileInfo$credentials$SecretAccessKey,
+                session_token = fileInfo$credentials$SessionToken
+            )
+            if (objectExists) {
+                # get the chunk from S3 and store it in temporary file (target)
+                rawOutput <- get_object(
+                    object = key, 
+                    bucket = fileInfo$s3Path$bucket, 
+                    region = fileInfo$region,
+                    key = fileInfo$credentials$AccessKeyId,
+                    secret = fileInfo$credentials$SecretAccessKey,
+                    session_token = fileInfo$credentials$SessionToken
+                )
+                rawToChar(rawOutput)
+            } else {
+                NULL
+            }
         },
         
         getFileData = function(fileInfo) {
@@ -224,37 +255,19 @@ SapiClient <- setRefClass(
             }}
             \\subsection{Return Value}{Data frame with file contents}"
             target <- tempfile('s3dld-')
-                if (fileInfo$isSliced) {
-                    response <- httr::GET(fileInfo$url)
-                    manifest <- .self$decodeResponse(response)
-                    for (i in seq_along(manifest$entries)) {
-                        fullPath <- manifest$entries[[i]]$url
-                        splittedPath <- strsplit(fullPath, "/")
-                        fileKey <-  paste(splittedPath[[1]][4:length(splittedPath[[1]])], collapse = "/")
-                        
-                        # get the chunk from S3 and store it in temporary file (target)
-                        rawOutput <- get_object(
-                            object = fileKey, 
-                            bucket = fileInfo$s3Path$bucket, 
-                            file = target,
-                            region = fileInfo$region,
-                            key = fileInfo$credentials$AccessKeyId,
-                            secret = fileInfo$credentials$SecretAccessKey,
-                            session_token = fileInfo$credentials$SessionToken
-                        )
-                    }
-                } else {
-                    rawOutput <- get_object(
-                        object = fileInfo$s3Path$key, 
-                        bucket = fileInfo$s3Path$bucket, 
-                        file = target,
-                        region = fileInfo$region,
-                        key = fileInfo$credentials$AccessKeyId,
-                        secret = fileInfo$credentials$SecretAccessKey,
-                        session_token = fileInfo$credentials$SessionToken
-                    )
-                }    
-            rawToChar(rawOutput)
+            if (fileInfo$isSliced) {
+                response <- httr::GET(fileInfo$url)
+                manifest <- .self$decodeResponse(response)
+                for (i in seq_along(manifest$entries)) {
+                    fullPath <- manifest$entries[[i]]$url
+                    splittedPath <- strsplit(fullPath, "/")
+                    fileKey <-  paste(splittedPath[[1]][4:length(splittedPath[[1]])], collapse = "/")
+                    stringOutput <- getS3Object(fileKey, fileInfo)
+                }
+                stringOutput
+            } else {
+                getS3Object(fileKey, fileInfo)
+            }    
         },
         
         uploadFile = function(dataFile, options = list()) {

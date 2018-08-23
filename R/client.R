@@ -224,17 +224,28 @@ SapiClient <- setRefClass(
             }}
             \\subsection{Return Value}{Data frame with file contents}"
             target <- tempfile('s3dld-')
-            if (fileInfo$isSliced) {
-                response <- httr::GET(fileInfo$url)
-                manifest <- .self$decodeResponse(response)
-                for (i in seq_along(manifest$entries)) {
-                    fullPath <- manifest$entries[[i]]$url
-                    splittedPath <- strsplit(fullPath, "/")
-                    fileKey <-  paste(splittedPath[[1]][4:length(splittedPath[[1]])], collapse = "/")
-                    
-                    # get the chunk from S3 and store it in temporary file (target)
-                    get_object(
-                        object = fileKey, 
+                if (fileInfo$isSliced) {
+                    response <- httr::GET(fileInfo$url)
+                    manifest <- .self$decodeResponse(response)
+                    for (i in seq_along(manifest$entries)) {
+                        fullPath <- manifest$entries[[i]]$url
+                        splittedPath <- strsplit(fullPath, "/")
+                        fileKey <-  paste(splittedPath[[1]][4:length(splittedPath[[1]])], collapse = "/")
+                        
+                        # get the chunk from S3 and store it in temporary file (target)
+                        rawOutput <- get_object(
+                            object = fileKey, 
+                            bucket = fileInfo$s3Path$bucket, 
+                            file = target,
+                            region = fileInfo$region,
+                            key = fileInfo$credentials$AccessKeyId,
+                            secret = fileInfo$credentials$SecretAccessKey,
+                            session_token = fileInfo$credentials$SessionToken
+                        )
+                    }
+                } else {
+                    rawOutput <- get_object(
+                        object = fileInfo$s3Path$key, 
                         bucket = fileInfo$s3Path$bucket, 
                         file = target,
                         region = fileInfo$region,
@@ -242,21 +253,8 @@ SapiClient <- setRefClass(
                         secret = fileInfo$credentials$SecretAccessKey,
                         session_token = fileInfo$credentials$SessionToken
                     )
-                }
-            } else {
-                # single file, so just get it
-                key <- fileInfo$s3Path$key
-                get_object(
-                    object = key, 
-                    bucket = fileInfo$s3Path$bucket, 
-                    file = target,
-                    region = fileInfo$region,
-                    key = fileInfo$credentials$AccessKeyId,
-                    secret = fileInfo$credentials$SecretAccessKey,
-                    session_token = fileInfo$credentials$SessionToken
-                )
-            }
-            target
+                }    
+            rawToChar(rawOutput)
         },
         
         uploadFile = function(dataFile, options = list()) {

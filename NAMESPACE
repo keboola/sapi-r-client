@@ -2,7 +2,7 @@
 
 export(SapiClient)
 exportClasses(SapiClient)
-import(aws.signature)
+import(aws.s3)
 import(data.table)
 import(httr)
 import(methods)

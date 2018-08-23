@@ -231,24 +231,29 @@ SapiClient <- setRefClass(
                     fullPath <- manifest$entries[[i]]$url
                     splittedPath <- strsplit(fullPath, "/")
                     fileKey <-  paste(splittedPath[[1]][4:length(splittedPath[[1]])], collapse = "/")
-                    bucket <- fileInfo$s3Path$bucket
+                    
                     # get the chunk from S3 and store it in temporary file (target)
-                    .self$s3GET(
-                        fileInfo$region, 
-                        paste0("https://", bucket, ".s3.amazonaws.com/", fileKey), 
-                        fileInfo$credentials, 
-                        target
+                    get_object(
+                        object = fileKey, 
+                        bucket = fileInfo$s3Path$bucket, 
+                        file = target,
+                        region = fileInfo$region,
+                        key = fileInfo$credentials$AccessKeyId,
+                        secret = fileInfo$credentials$SecretAccessKey,
+                        session_token = fileInfo$credentials$SessionToken
                     )
                 }
             } else {
                 # single file, so just get it
-                bucket <- fileInfo$s3Path$bucket
                 key <- fileInfo$s3Path$key
-                .self$s3GET(
-                    fileInfo$region, 
-                    paste0("https://", bucket, ".s3.amazonaws.com/", key), 
-                    fileInfo$credentials, 
-                    target
+                get_object(
+                    object = key, 
+                    bucket = fileInfo$s3Path$bucket, 
+                    file = target,
+                    region = fileInfo$region,
+                    key = fileInfo$credentials$AccessKeyId,
+                    secret = fileInfo$credentials$SecretAccessKey,
+                    session_token = fileInfo$credentials$SessionToken
                 )
             }
             target
@@ -281,28 +286,18 @@ SapiClient <- setRefClass(
                     stop(paste("preparing file upload warning recieved:", w$message))
                 }
             )
-            print(resp)
-            uploadParams <- resp$uploadParams
-            body <- list(
-                key = uploadParams$key,
-                acl = uploadParams$acl,
-                signature = uploadParams$signature,
-                policy = uploadParams$policy,
-                AWSAccessKeyId = uploadParams$AWSAccessKeyId,
-                file = httr::upload_file(dataFile)
+    
+            # put the file to AWS
+            put_object(
+                file = dataFile,
+                object = resp$uploadParams$key,
+                bucket = resp$uploadParams$bucket,
+                region = resp$region,
+                key = resp$uploadParams$credentials$AccessKeyId,
+                secret = resp$uploadParams$credentials$SecretAccessKey,
+                session_token = resp$uploadParams$credentials$SessionToken
             )
-            if ("isEncrypted" %in% names(options)) {
-                body$x-amz-server-side-encryption <- uploadParams$x-amz-server-side-encryption
-            }
-            res <- tryCatch(
-                {
-                    httr::POST(uploadParams$url, body=body)
-                }, error = function(e) {
-                    stop(paste("error uploading file", e))
-                }, warning = function(w) {
-                    stop(paste("file upload warning recieved:", w$message))
-                }
-            )
+            
             # return the file id of the uploaded file
             return(resp$id)
         },

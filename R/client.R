@@ -258,11 +258,13 @@ SapiClient <- setRefClass(
             if (fileInfo$isSliced) {
                 response <- httr::GET(fileInfo$url)
                 manifest <- .self$decodeResponse(response)
+                stringOutput <- ""
                 for (i in seq_along(manifest$entries)) {
                     fullPath <- manifest$entries[[i]]$url
                     splittedPath <- strsplit(fullPath, "/")
                     fileKey <-  paste(splittedPath[[1]][4:length(splittedPath[[1]])], collapse = "/")
-                    stringOutput <- getS3Object(fileKey, fileInfo)
+                    stringData <- getS3Object(fileKey, fileInfo)
+                    stringOutput <- paste0(stringOutput, stringData)
                 }
                 stringOutput
             } else {

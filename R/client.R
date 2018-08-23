@@ -1,6 +1,6 @@
 #' Client for working with Keboola Connection Storage API.
 #'
-#' @import httr methods aws.signature data.table
+#' @import httr methods aws.s3 data.table
 #' @exportClass SapiClient
 #' @export SapiClient
 SapiClient <- setRefClass(
@@ -265,6 +265,9 @@ SapiClient <- setRefClass(
             if (!("name" %in% names(options))) {
                 options$name = basename(dataFile)
             }
+            if (!("federationToken" %in% names(options))) {
+                options$federationToken = 1
+            }
             resp <- tryCatch(
                 {
                 .self$decodeResponse(
@@ -278,6 +281,7 @@ SapiClient <- setRefClass(
                     stop(paste("preparing file upload warning recieved:", w$message))
                 }
             )
+            print(resp)
             uploadParams <- resp$uploadParams
             body <- list(
                 key = uploadParams$key,
@@ -576,7 +580,42 @@ SapiClient <- setRefClass(
                 TRUE
             }
         },
-        
+        s3PUT = function(region, url, credentials, source) {
+            "Put a file (or file chunk) into AWS S3 storage.
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{region} AWS file region.}
+            \\item{\\code{url} file URL to get.}
+            \\item{\\code{credentials} List with file credentials (secret and access key).}
+            \\item{\\code{source} File to put to S3.}
+            }}
+            \\subsection{Return Value}{TRUE}"
+            current <- Sys.time()
+            d_timestamp <- format(current, "%Y%m%dT%H%M%SZ", tz = "UTC")
+            p <- httr::parse_url(url)
+            action <- if(p$path == "") "/" else paste0("/",p$path)
+            headers <- list()
+            Sig <- aws.signature::signature_v4_auth(
+                datetime = d_timestamp,
+                region = region,
+                service = "s3",
+                verb = "PUT",
+                action = action,
+                query_args = p$query,
+                canonical_headers = list(
+                    host = p$hostname,
+                    `x-amz-date` = d_timestamp,
+                    `x-amz-security-token` = credentials$SessionToken
+                ),
+                request_body = "",
+                key = credentials$AccessKeyId, 
+                secret = credentials$SecretAccessKey
+            )
+            headers$`x-amz-date` <- d_timestamp
+            headers$`x-amz-content-sha256` <- Sig$BodyHash
+            headers$Authorization <- Sig$SignatureHeader
+            headers$`x-amz-security-token` <- credentials$SessionToken
+            
+        },
         s3GET = function(region, url, credentials, target) {
             "Get a file (or file chunk) from AWS S3 storage.
             \\subsection{Parameters}{\\itemize{

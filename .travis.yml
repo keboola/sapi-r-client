@@ -4,7 +4,7 @@ sudo: required
 warnings_are_errors: true
 
 r_github_packages:
-- cloudyr/aws.signature
+- cloudyr/aws.s3
 
 notifications:
   slack:

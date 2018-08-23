@@ -1,14 +1,14 @@
 Package: keboola.sapi.r.client
 Type: Package
 Title: Keboola Connection Storage client
-Version: 1.2.1
-Date: 2015-11-19
+Version: 0.4.0
+Date: 2018-08-23
 Author: Marc Raiser
 Maintainer: Marc Raiser <marc@keboola.com>
 Depends:
     httr,
     methods,
-    aws.signature,
+    aws.s3,
     data.table
 Suggests:
     testthat

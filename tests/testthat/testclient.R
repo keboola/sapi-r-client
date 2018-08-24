@@ -361,9 +361,9 @@ test_that("fileLoad", {
     
     expect_equal(length(files), 1)
     
-    filePath <- client$loadFile(files[[1]]$id)
+    data <- client$loadFile(files[[1]]$id)
     
-    expect_equal(fread(filePath), fread(testFilePath))
+    expect_equal(read.csv(textConnection(data, 'r'), row.names = FALSE), df)
     
     client$deleteFile(files[[1]]$id)
     files <- client$listFiles(tags=tags)

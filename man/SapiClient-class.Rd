@@ -174,6 +174,13 @@ createTableAsync/importTableAsync methods.}
 }}
 \subsection{Return Value}{List with job details}}
 
+\item{\code{getS3Object(key, fileInfo)}}{Get a file from the S3 storage
+\subsection{Parameters}{\itemize{
+\iten{\code{key} Object Key to retrieve}
+\item{\code{list} File info list object (see \code{getFileInfo())}.}
+}}
+\subsection{Return Value}{Data frame with file contents}}
+
 \item{\code{getTable(tableId)}}{Get table information.
 \subsection{Parameters}{\itemize{
 \item{\code{tableId} Table ID (including bucket ID).}

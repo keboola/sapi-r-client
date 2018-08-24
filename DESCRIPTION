@@ -8,8 +8,7 @@ Maintainer: Marc Raiser <marc@keboola.com>
 Depends:
     httr,
     methods,
-    aws.s3,
-    data.table
+    aws.s3
 Suggests:
     testthat
 Description: Client for working with KBC Storage API.

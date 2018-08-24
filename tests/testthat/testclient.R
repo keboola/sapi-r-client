@@ -104,7 +104,7 @@ test_that("createAndDeleteMethods", {
   expect_equal(c("colA", "colB", 'colC'), names(df))
 
   df <- client$importTable(tbl$id)
-  expect_equal(sort(df$colC), sort(colC))
+  expect_equal(as.vector(sort(df$colC)), sort(colC))
   
   # delete the table
   dt <- client$deleteTable(tbl$id)
@@ -252,7 +252,7 @@ test_that("componentConfiguration", {
     
     # get configuration row
     row <- client$getConfigurationRow(testComponent, testConfigId, testRowId)
-    expect_equal(row[[1]]$configuration$foo, "baz")
+    expect_equal(row$configuration$foo, "baz")
     
     # delete the configuration row
     client$deleteConfigurationRow(testComponent, testConfigId, testRowId)
@@ -353,20 +353,20 @@ test_that("fileLoad", {
     # create a file to put to our storage
     testFilePath <- "fileStorageTest.csv"
     df <- data.frame(ts_var = '201309', actual_value = '20348832.0000000000', expected_value = '15190371.0000000000', run_id = '130865113')
-    write.csv(df, file=testFilePath)
+    write.csv(df, file=testFilePath, row.names = FALSE)
     
     randomTag = paste(sample(LETTERS, 10, TRUE), collapse="")
-    tags <- c("sapi-r-client", "bigFunTestFile", randomTag)
+    tags <- c("sapi-r-client-test", randomTag)
     client$putFile(testFilePath, tags=tags)
-    files <- client$listFiles(tags=tags)
+    files <- client$listFiles(tags=c(randomTag))
     
     expect_equal(length(files), 1)
     
     data <- client$loadFile(files[[1]]$id)
     
-    expect_equal(read.csv(textConnection(data, 'r'), row.names = FALSE), df)
+    expect_equal(read.csv(textConnection(data, 'r'), numerals = "no.loss"), df)
     
     client$deleteFile(files[[1]]$id)
-    files <- client$listFiles(tags=tags)
+    files <- client$listFiles(tags=c(randomTag))
     expect_equal(0, length(files))
 })

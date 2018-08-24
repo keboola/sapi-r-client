@@ -204,11 +204,11 @@ SapiClient <- setRefClass(
             tryCatch(
                 {
                     if (fileInfo$isSliced) {
-                        df <- read.csv(textConnection(data, 'r'), header = FALSE, numerals = "no.loss")
+                        df <- read.csv(textConnection(data, 'r'), header = FALSE, numerals = "no.loss", row.names = FALSE)
                         # in case of empty file, fread causes error, silence it and continue with empty df
                     } else {
                         # header is included in unsliced downloads
-                        df <- read.csv(textConnection(data, 'r'), header = TRUE, numerals = "no.loss")
+                        df <- read.csv(textConnection(data, 'r'), header = TRUE, numerals = "no.loss", row.names = FALSE)
                     }
                 }, error = function(e) {
                     write(paste("error reading from", data, " most likely the file was empty: ", e), stderr())
@@ -268,7 +268,7 @@ SapiClient <- setRefClass(
                 }
                 stringOutput
             } else {
-                getS3Object(fileKey, fileInfo)
+                getS3Object(fileInfo$s3Path$key, fileInfo)
             }    
         },
         

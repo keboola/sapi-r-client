@@ -176,7 +176,7 @@ createTableAsync/importTableAsync methods.}
 
 \item{\code{getS3Object(key, fileInfo)}}{Get a file from the S3 storage
 \subsection{Parameters}{\itemize{
-\iten{\code{key} Object Key to retrieve}
+\item{\code{key} Object Key to retrieve}
 \item{\code{list} File info list object (see \code{getFileInfo())}.}
 }}
 \subsection{Return Value}{Data frame with file contents}}

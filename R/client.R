@@ -1,6 +1,6 @@
 #' Client for working with Keboola Connection Storage API.
 #'
-#' @import httr methods aws.s3 data.table
+#' @import httr methods aws.s3
 #' @exportClass SapiClient
 #' @export SapiClient
 SapiClient <- setRefClass(

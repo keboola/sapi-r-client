@@ -357,16 +357,16 @@ test_that("fileLoad", {
     
     randomTag = paste(sample(LETTERS, 10, TRUE), collapse="")
     tags <- c("sapi-r-client-test", randomTag)
-    client$putFile(testFilePath, tags=tags)
-    files <- client$listFiles(tags=c(randomTag))
+    fileId <- client$putFile(testFilePath, tags=tags)
     
-    expect_equal(length(files), 1)
+    data <- client$loadFile(fileId)
+    dfCopy <- read.csv(textConnection(data, 'r'), numerals = "no.loss")
     
-    data <- client$loadFile(files[[1]]$id)
+    lapply(names(dfCopy), function (col) {
+       lapply(seq_along(dfCopy[col]), function (ind) {
+           expect_equal(as.character(dfCopy[col][[ind]]), as.character(df[col][[ind]])) 
+       })
+    });
     
-    expect_equal(read.csv(textConnection(data, 'r'), numerals = "no.loss"), df)
-    
-    client$deleteFile(files[[1]]$id)
-    files <- client$listFiles(tags=c(randomTag))
-    expect_equal(0, length(files))
+    client$deleteFile(fileId)
 })

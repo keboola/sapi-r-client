@@ -355,7 +355,8 @@ test_that("fileLoad", {
     df <- data.frame(ts_var = '201309', actual_value = '20348832.0000000000', expected_value = '15190371.0000000000', run_id = '130865113')
     write.csv(df, file=testFilePath)
     
-    tags <- c("sapi-r-client", "bigFunTestFile")
+    randomTag = paste(sample(LETTERS, 10, TRUE), collapse="")
+    tags <- c("sapi-r-client", "bigFunTestFile", randomTag)
     client$putFile(testFilePath, tags=tags)
     files <- client$listFiles(tags=tags)
     

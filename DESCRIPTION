@@ -1,6 +1,6 @@
 Package: keboola.sapi.r.client
 Type: Package
-Title: Keboola Connection Storage client
+Title: Keboola Connection Storage Client
 Version: 0.4.0
 Date: 2018-08-23
 Author: Marc Raiser

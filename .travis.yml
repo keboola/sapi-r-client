@@ -1,10 +1,14 @@
-language: r
-sudo: required
+language: bash
 
-warnings_are_errors: true
+services:
+  - docker
 
-r_github_packages:
-- cloudyr/aws.s3
+before_script:
+  - docker build . --tag=sapi-r-client
+
+script:
+  - docker run sapi-r-client 
+  - docker run -e KBC_TEST_TOKEN -e KBC_TEST_URL sapi-r-client /code/check.sh
 
 notifications:
   slack:

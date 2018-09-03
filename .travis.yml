@@ -7,7 +7,6 @@ before_script:
   - docker build . --tag=sapi-r-client
 
 script:
-  - docker run sapi-r-client 
   - docker run -e KBC_TEST_TOKEN -e KBC_TEST_URL sapi-r-client /code/check.sh
 
 notifications:

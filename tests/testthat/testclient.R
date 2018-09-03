@@ -28,10 +28,19 @@ verifyTableStructure <- function(table) {
   expect_false(is.null(table$isAlias)) 
 }
 
+createTestBucket <- function(client) {
+    client$createBucket(
+        "r_client_testing",
+        "in",
+        "This bucket was created by the sapi R client test routine",
+        backend="snowflake"
+    )
+}
+
 test_that("verifyToken", {
     client <- SapiClient$new(
-        token = KBC_TOKEN,
-        url = KBC_URL
+        token = Sys.getenv('KBC_TEST_TOKEN'),
+        url = Sys.getenv('KBC_TEST_URL')
     )
     tokenDetails <- client$verifyToken()
 
@@ -47,8 +56,8 @@ test_that("verifyToken", {
 
 test_that("listBuckets", {
   client <- SapiClient$new(
-    token = KBC_TOKEN,
-    url = KBC_URL
+    token = Sys.getenv('KBC_TEST_TOKEN'),
+    url = Sys.getenv('KBC_TEST_URL')
   )
   bucketlist <- client$listBuckets()
   
@@ -60,8 +69,8 @@ test_that("listBuckets", {
 
 test_that("createAndDeleteMethods", {
   client <- SapiClient$new(
-    token = KBC_TOKEN,
-    url = KBC_URL
+    token = Sys.getenv('KBC_TEST_TOKEN'),
+    url = Sys.getenv('KBC_TEST_URL')
   )
   # check if our testing table and bucket exist, if so remove them
   if (client$bucketExists("in.c-r_client_testing")) {
@@ -71,7 +80,7 @@ test_that("createAndDeleteMethods", {
     client$deleteBucket("in.c-r_client_testing")
   }
   # make the bucket we will use for testing
-  result <- client$createBucket("r_client_testing","in","This bucket was created by the sapi R client test routine")
+  result <- createTestBucket(client)
   verifyBucketStructure(result)
   
   # create a table in our new bucket
@@ -95,7 +104,7 @@ test_that("createAndDeleteMethods", {
   expect_equal(c("colA", "colB", 'colC'), names(df))
 
   df <- client$importTable(tbl$id)
-  expect_equal(sort(df$colC), sort(colC))
+  expect_equal(as.vector(sort(df$colC)), sort(colC))
   
   # delete the table
   dt <- client$deleteTable(tbl$id)
@@ -108,8 +117,8 @@ test_that("createAndDeleteMethods", {
 
 test_that("oneRowTable", {
   client <- SapiClient$new(
-    token = KBC_TOKEN,
-    url = KBC_URL
+    token = Sys.getenv('KBC_TEST_TOKEN'),
+    url = Sys.getenv('KBC_TEST_URL')
   )
   # check if our testing table and bucket exist, if so remove them
   if (client$bucketExists("in.c-r_client_testing")) {
@@ -119,7 +128,7 @@ test_that("oneRowTable", {
     client$deleteBucket("in.c-r_client_testing")
   }
   # make the bucket we will use for testing
-  result <- client$createBucket("r_client_testing","in","This bucket was created by the sapi R client test routine")
+  result <- createTestBucket(client)
   verifyBucketStructure(result)
   
   # create a table in our new bucket
@@ -146,8 +155,8 @@ test_that("oneRowTable", {
 
 test_that("emptyRowTable", {
   client <- SapiClient$new(
-    token = KBC_TOKEN,
-    url = KBC_URL
+    token = Sys.getenv('KBC_TEST_TOKEN'),
+    url = Sys.getenv('KBC_TEST_URL')
   )
   # check if our testing table and bucket exist, if so remove them
   if (client$bucketExists("in.c-r_client_testing")) {
@@ -157,7 +166,7 @@ test_that("emptyRowTable", {
     client$deleteBucket("in.c-r_client_testing")
   }
   # make the bucket we will use for testing
-  result <- client$createBucket("r_client_testing","in","This bucket was created by the sapi R client test routine")
+  result <- createTestBucket(client)
   verifyBucketStructure(result)
   
   # create a table in our new bucket
@@ -183,8 +192,8 @@ test_that("emptyRowTable", {
 
 test_that("writeToNonExisingBucket", {
   client <- SapiClient$new(
-    token = KBC_TOKEN,
-    url = KBC_URL
+    token = Sys.getenv('KBC_TEST_TOKEN'),
+    url = Sys.getenv('KBC_TEST_URL')
   )
   # check if our testing table and bucket exist, if so remove them
   if (client$bucketExists("in.c-r_client_testing")) {
@@ -194,7 +203,7 @@ test_that("writeToNonExisingBucket", {
     client$deleteBucket("in.c-r_client_testing")
   }
   # make the bucket we will use for testing
-  result <- client$createBucket("r_client_testing","in","This bucket was created by the sapi R client test routine")
+  result <- createTestBucket(client)
   verifyBucketStructure(result)
   
   # create a table in our new bucket
@@ -208,8 +217,8 @@ test_that("writeToNonExisingBucket", {
 
 test_that("componentConfiguration", {
     client <- SapiClient$new(
-        token = KBC_TOKEN,
-        url = KBC_URL
+        token = Sys.getenv('KBC_TEST_TOKEN'),
+        url = Sys.getenv('KBC_TEST_URL')
     )
     testComponent <- "shiny"
     testConfigId <- "sapi-r-client-test"
@@ -243,7 +252,7 @@ test_that("componentConfiguration", {
     
     # get configuration row
     row <- client$getConfigurationRow(testComponent, testConfigId, testRowId)
-    expect_equal(row[[1]]$configuration$foo, "baz")
+    expect_equal(row$configuration$foo, "baz")
     
     # delete the configuration row
     client$deleteConfigurationRow(testComponent, testConfigId, testRowId)
@@ -261,8 +270,8 @@ test_that("componentConfiguration", {
 
 test_that("workspaces", {
     client <- SapiClient$new(
-        token = KBC_TOKEN,
-        url = KBC_URL
+        token = Sys.getenv('KBC_TEST_TOKEN'),
+        url = Sys.getenv('KBC_TEST_URL')
     )
     
     workspaces <- client$listWorkspaces()
@@ -307,8 +316,8 @@ test_that("workspaces", {
 
 test_that("incremental_load", {
     client <- SapiClient$new(
-        token = KBC_TOKEN,
-        url = KBC_URL
+        token = Sys.getenv('KBC_TEST_TOKEN'),
+        url = Sys.getenv('KBC_TEST_URL')
     )
     # check if our testing table and bucket exist, if so remove them
     if (client$bucketExists("in.c-r_client_testing")) {
@@ -318,7 +327,7 @@ test_that("incremental_load", {
         client$deleteBucket("in.c-r_client_testing")
     }
     # make the bucket we will use for testing
-    result <- client$createBucket("r_client_testing","in","This bucket was created by the sapi R client test routine")
+    result <- createTestBucket(client)
     verifyBucketStructure(result)
     
     # create a table in our new bucket
@@ -337,26 +346,27 @@ test_that("incremental_load", {
 
 test_that("fileLoad", {
     client <- SapiClient$new(
-        token = KBC_TOKEN,
-        url = KBC_URL
+        token = Sys.getenv('KBC_TEST_TOKEN'),
+        url = Sys.getenv('KBC_TEST_URL')
     )
     
     # create a file to put to our storage
     testFilePath <- "fileStorageTest.csv"
     df <- data.frame(ts_var = '201309', actual_value = '20348832.0000000000', expected_value = '15190371.0000000000', run_id = '130865113')
-    write.csv(df, file=testFilePath)
+    write.csv(df, file=testFilePath, row.names = FALSE)
     
-    tags <- c("sapi-r-client", "bigFunTestFile")
-    client$putFile(testFilePath, tags=tags)
-    files <- client$listFiles(tags=tags)
+    randomTag = paste(sample(LETTERS, 10, TRUE), collapse="")
+    tags <- c("sapi-r-client-test", randomTag)
+    fileId <- client$putFile(testFilePath, tags=tags)
     
-    expect_equal(length(files), 1)
+    data <- client$loadFile(fileId)
+    dfCopy <- read.csv(textConnection(data, 'r'), numerals = "no.loss")
     
-    filePath <- client$loadFile(files[[1]]$id)
+    lapply(names(dfCopy), function (col) {
+       lapply(seq_along(dfCopy[col]), function (ind) {
+           expect_equal(as.character(dfCopy[col][[ind]]), as.character(df[col][[ind]])) 
+       })
+    });
     
-    expect_equal(fread(filePath), fread(testFilePath))
-    
-    client$deleteFile(files[[1]]$id)
-    files <- client$listFiles(tags=tags)
-    expect_equal(0, length(files))
+    client$deleteFile(fileId)
 })

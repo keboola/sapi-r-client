@@ -1,4 +1,6 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^\.git$
-^\.travis.\yml
+^\.travis\.yml$
+^Dockerfile$
+^check\.sh$

@@ -174,6 +174,13 @@ createTableAsync/importTableAsync methods.}
 }}
 \subsection{Return Value}{List with job details}}
 
+\item{\code{getS3Object(key, fileInfo)}}{Get a file from the S3 storage
+\subsection{Parameters}{\itemize{
+\item{\code{key} Object Key to retrieve}
+\item{\code{list} File info list object (see \code{getFileInfo())}.}
+}}
+\subsection{Return Value}{Data frame with file contents}}
+
 \item{\code{getTable(tableId)}}{Get table information.
 \subsection{Parameters}{\itemize{
 \item{\code{tableId} Table ID (including bucket ID).}
@@ -278,15 +285,6 @@ Note that the configuration property must be put in a subsequent PUT call.
     \item{\code{tags} tags to describe the file}
 }}
 \subsection{Return Value}{fileId of the created file}}
-
-\item{\code{s3GET(region, url, credentials, target)}}{Get a file (or file chunk) from AWS S3 storage.
-\subsection{Parameters}{\itemize{
-\item{\code{region} AWS file region.}
-\item{\code{url} file URL to get.}
-\item{\code{credentials} List with file credentials (secret and access key).}
-\item{\code{target} String file to which contents will be appended.}
-}}
-\subsection{Return Value}{TRUE}}
 
 \item{\code{saveTable(df, bucket, tableName, fileName = "tmpfile.csv", options = list())}}{Save a table to Storage. Wrapper for the \code{saveTableAsync} function.
 \subsection{Parameters}{\itemize{

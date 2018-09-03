@@ -1,6 +1,6 @@
 #' Client for working with Keboola Connection Storage API.
 #'
-#' @import httr methods aws.signature data.table
+#' @import httr methods aws.s3
 #' @exportClass SapiClient
 #' @export SapiClient
 SapiClient <- setRefClass(
@@ -199,22 +199,53 @@ SapiClient <- setRefClass(
         
         getFileDataIntoDataFrame = function(fileInfo)
         {
-            target <- .self$getFileData(fileInfo)
+            data <- .self$getFileData(fileInfo)
             df <- data.frame()
             tryCatch(
                 {
                     if (fileInfo$isSliced) {
-                        df <- data.table::fread(target, header = FALSE)
+                        df <- read.csv(textConnection(data, 'r'), header = FALSE, numerals = "no.loss")
                         # in case of empty file, fread causes error, silence it and continue with empty df
                     } else {
                         # header is included in unsliced downloads
-                        df <- data.table::fread(target, header = TRUE)
+                        df <- read.csv(textConnection(data, 'r'), header = TRUE, numerals = "no.loss")
                     }
                 }, error = function(e) {
-                    write(paste("error reading from", target, " most likely the file was empty: ", e), stderr())
+                    write(paste("error reading from", data, " most likely the file was empty: ", e), stderr())
                 }
             )
             return(df)
+        },
+        
+        getS3Object = function(key, fileInfo) {
+            "Get a file from the S3 storage
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{key} Object Key to retrieve}
+            \\item{\\code{list} File info list object (see \\code{getFileInfo())}.}
+            }}
+            \\subsection{Return Value}{Data frame with file contents}"
+            objectExists <- aws.s3::object_exists(
+                object = key,
+                bucket = fileInfo$s3Path$bucket, 
+                region = fileInfo$region,
+                key = fileInfo$credentials$AccessKeyId,
+                secret = fileInfo$credentials$SecretAccessKey,
+                session_token = fileInfo$credentials$SessionToken
+            )
+            if (objectExists) {
+                # get the chunk from S3 and store it in temporary file (target)
+                rawOutput <- aws.s3::get_object(
+                    object = key, 
+                    bucket = fileInfo$s3Path$bucket, 
+                    region = fileInfo$region,
+                    key = fileInfo$credentials$AccessKeyId,
+                    secret = fileInfo$credentials$SecretAccessKey,
+                    session_token = fileInfo$credentials$SessionToken
+                )
+                rawToChar(rawOutput)
+            } else {
+                NULL
+            }
         },
         
         getFileData = function(fileInfo) {
@@ -227,31 +258,18 @@ SapiClient <- setRefClass(
             if (fileInfo$isSliced) {
                 response <- httr::GET(fileInfo$url)
                 manifest <- .self$decodeResponse(response)
+                stringOutput <- ""
                 for (i in seq_along(manifest$entries)) {
                     fullPath <- manifest$entries[[i]]$url
                     splittedPath <- strsplit(fullPath, "/")
                     fileKey <-  paste(splittedPath[[1]][4:length(splittedPath[[1]])], collapse = "/")
-                    bucket <- fileInfo$s3Path$bucket
-                    # get the chunk from S3 and store it in temporary file (target)
-                    .self$s3GET(
-                        fileInfo$region, 
-                        paste0("https://", bucket, ".s3.amazonaws.com/", fileKey), 
-                        fileInfo$credentials, 
-                        target
-                    )
+                    stringData <- getS3Object(fileKey, fileInfo)
+                    stringOutput <- paste0(stringOutput, stringData)
                 }
+                stringOutput
             } else {
-                # single file, so just get it
-                bucket <- fileInfo$s3Path$bucket
-                key <- fileInfo$s3Path$key
-                .self$s3GET(
-                    fileInfo$region, 
-                    paste0("https://", bucket, ".s3.amazonaws.com/", key), 
-                    fileInfo$credentials, 
-                    target
-                )
-            }
-            target
+                .self$getS3Object(fileInfo$s3Path$key, fileInfo)
+            }    
         },
         
         uploadFile = function(dataFile, options = list()) {
@@ -264,6 +282,9 @@ SapiClient <- setRefClass(
             \\subsection{Return Value}{Integer file ID of the uploaded file.}"
             if (!("name" %in% names(options))) {
                 options$name = basename(dataFile)
+            }
+            if (!("federationToken" %in% names(options))) {
+                options$federationToken = 1
             }
             resp <- tryCatch(
                 {
@@ -278,27 +299,18 @@ SapiClient <- setRefClass(
                     stop(paste("preparing file upload warning recieved:", w$message))
                 }
             )
-            uploadParams <- resp$uploadParams
-            body <- list(
-                key = uploadParams$key,
-                acl = uploadParams$acl,
-                signature = uploadParams$signature,
-                policy = uploadParams$policy,
-                AWSAccessKeyId = uploadParams$AWSAccessKeyId,
-                file = httr::upload_file(dataFile)
+    
+            # put the file to AWS
+            aws.s3::put_object(
+                file = dataFile,
+                object = resp$uploadParams$key,
+                bucket = resp$uploadParams$bucket,
+                region = resp$region,
+                key = resp$uploadParams$credentials$AccessKeyId,
+                secret = resp$uploadParams$credentials$SecretAccessKey,
+                session_token = resp$uploadParams$credentials$SessionToken
             )
-            if ("isEncrypted" %in% names(options)) {
-                body$x-amz-server-side-encryption <- uploadParams$x-amz-server-side-encryption
-            }
-            res <- tryCatch(
-                {
-                    httr::POST(uploadParams$url, body=body)
-                }, error = function(e) {
-                    stop(paste("error uploading file", e))
-                }, warning = function(w) {
-                    stop(paste("file upload warning recieved:", w$message))
-                }
-            )
+            
             # return the file id of the uploaded file
             return(resp$id)
         },
@@ -575,47 +587,6 @@ SapiClient <- setRefClass(
             } else {
                 TRUE
             }
-        },
-        
-        s3GET = function(region, url, credentials, target) {
-            "Get a file (or file chunk) from AWS S3 storage.
-            \\subsection{Parameters}{\\itemize{
-            \\item{\\code{region} AWS file region.}
-            \\item{\\code{url} file URL to get.}
-            \\item{\\code{credentials} List with file credentials (secret and access key).}
-            \\item{\\code{target} String file to which contents will be appended.}
-            }}
-            \\subsection{Return Value}{TRUE}"
-            current <- Sys.time()
-            d_timestamp <- format(current, "%Y%m%dT%H%M%SZ", tz = "UTC")
-            p <- httr::parse_url(url)
-            action <- if(p$path == "") "/" else paste0("/",p$path)
-            headers <- list()
-            Sig <- aws.signature::signature_v4_auth(
-                datetime = d_timestamp,
-                region = region,
-                service = "s3",
-                verb = "GET",
-                action = action,
-                query_args = p$query,
-                canonical_headers = list(
-                    host = p$hostname,
-                    `x-amz-date` = d_timestamp,
-                    `x-amz-security-token` = credentials$SessionToken
-                ),
-                request_body = "",
-                key = credentials$AccessKeyId, 
-                secret = credentials$SecretAccessKey
-            )
-            headers$`x-amz-date` <- d_timestamp
-            headers$`x-amz-content-sha256` <- Sig$BodyHash
-            headers$Authorization <- Sig$SignatureHeader
-            headers$`x-amz-security-token` <- credentials$SessionToken
-
-            H <- do.call(httr::add_headers, headers)
-            r <- httr::GET(url, H)
-            cat(httr::content(r, as = "text", encoding = 'UTF-8'), file = target, append = TRUE)
-            NULL
         },
         
         bucketExists = function(bucketId) {

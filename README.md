@@ -4,6 +4,7 @@
 
 Client for using [Keboola Connection Storage API](http://docs.keboola.apiary.io/). 
 This API client provides client methods to get data from KBC and put data back to KBC.
+See the [documentation](https://developers.keboola.com/integrate/storage/) for more information.
 
 ## Examples
 ```
@@ -14,8 +15,8 @@ install.packages("devtools")
 library(devtools)
 
 # this package relies on another github package 
-# for aws request signature generation
-devtools::install_github("cloudyr/aws.signature")
+# for aws requests
+devtools::install_github("cloudyr/aws.s3")
 
 # install the sapi client package
 devtools::install_github("keboola/sapi-r-client")
@@ -72,8 +73,4 @@ myFileContents <- read.csv(myFilePath)
 client$deleteFile(newFileId)
 ```
 
-The only required argument to create a client is a valid Storage API token.
-
-Please see the storage api documentation for further info:
-http://docs.keboola.apiary.io/
-
+The only required argument to create a client is a valid Storage API token and API URL.

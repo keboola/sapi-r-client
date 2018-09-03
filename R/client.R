@@ -224,7 +224,7 @@ SapiClient <- setRefClass(
             \\item{\\code{list} File info list object (see \\code{getFileInfo())}.}
             }}
             \\subsection{Return Value}{Data frame with file contents}"
-            objectExists <- object_exists(
+            objectExists <- aws.s3::object_exists(
                 object = key,
                 bucket = fileInfo$s3Path$bucket, 
                 region = fileInfo$region,
@@ -234,7 +234,7 @@ SapiClient <- setRefClass(
             )
             if (objectExists) {
                 # get the chunk from S3 and store it in temporary file (target)
-                rawOutput <- get_object(
+                rawOutput <- aws.s3::get_object(
                     object = key, 
                     bucket = fileInfo$s3Path$bucket, 
                     region = fileInfo$region,
@@ -268,7 +268,7 @@ SapiClient <- setRefClass(
                 }
                 stringOutput
             } else {
-                getS3Object(fileInfo$s3Path$key, fileInfo)
+                .self$getS3Object(fileInfo$s3Path$key, fileInfo)
             }    
         },
         
@@ -301,7 +301,7 @@ SapiClient <- setRefClass(
             )
     
             # put the file to AWS
-            put_object(
+            aws.s3::put_object(
                 file = dataFile,
                 object = resp$uploadParams$key,
                 bucket = resp$uploadParams$bucket,

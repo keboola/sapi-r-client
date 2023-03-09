@@ -15,7 +15,7 @@ SapiClient <- setRefClass(
         initialize = function(
                 token,
                 url,
-                userAgent = "Keboola StorageApi R Client/v2"
+                userAgent = "Keboola StorageApi R Client/v0.5"
         ) {
             "Constructor.
             \\subsection{Parameters}{\\itemize{
@@ -258,9 +258,9 @@ SapiClient <- setRefClass(
             }}
             \\subsection{Return Value}{Data frame with file contents}"
             # Sasconnection string comes in the following format:
-            # BlobEndpoint=https://kbcfshc7chguaeh2km.blob.core.windows.net;SharedAccessSignature=sv=2017-11-09&sr=c&st=2023-03-08T18:47:29Z&se=2023-03-09T06:47:29Z&sp=rwl&sig=o89P1pW04xbgRB7wrUFOq%2BLZRJxSu%2FIgcWt32B1P1os%3D
+            # BlobEndpoint=https://kbcfshc7chguaeh2km.blob.core.windows.net;SharedAccessSignature=sv=2017-11-09&sr=c&st=2023-03-08T18:47:29Z&se=2023-03-09T06:47:29Z&sp=rwl&sig=aaaaaaaaaaa%3D
             # We need to set containerUrl to https://kbcfshc7chguaeh2km.blob.core.windows.net + containerName
-            # and sas to the value of SharedAccessSignature, that is sv=2017-11-09&sr=c&...2BLZRJxSu%2FIgcWt32B1P1os%3D
+            # and sas to the value of SharedAccessSignature, that is sv=2017-11-09&sr=c&...aaaaaaaaaaa%3D
             connectionString <- fileInfo$absCredentials$SASConnectionString;
             blobEndpoint <- strsplit(connectionString, ";")[[1]][1]
             blobEndpointValue <- strsplit(blobEndpoint, "=")[[1]][2]

@@ -27,6 +27,7 @@ library("keboola.sapi.r.client")
 # create client
 client <- SapiClient$new(
     token = 'your-token'
+    url = 'https://connection.keboola.com'
 )
 
 # verify the token

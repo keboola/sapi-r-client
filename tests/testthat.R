@@ -11,11 +11,3 @@ if (var == '') {
 
 test_check("keboola.sapi.r.client")
 
-#Sys.setenv(KBC_TEST_TOKEN='66-322-DyChVD3tyv6bzasIU8YCC9uCcFztnC5SGjBLqP7p')
-#Sys.setenv(KBC_TEST_URL='https://connection.north-europe.azure.keboola.com/')
-#
-#source("R/client.R")
-#client <- SapiClient$new(
-#    token = Sys.getenv('KBC_TEST_TOKEN'),
-#    url = Sys.getenv('KBC_TEST_URL')
-#)

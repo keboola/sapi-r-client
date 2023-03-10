@@ -1,19 +1,13 @@
 library(testthat)
 
-KBC_TOKEN <- 'your_token'
-KBC_URL <- 'https://connection.keboola.com/v2/'
-
-# override with config if any
-if (file.exists("config.R")) {
-  source("config.R")
+var <- Sys.getenv('KBC_TEST_TOKEN')
+if (var == '') {
+    stop('KBC_TEST_TOKEN environment variable is empty')
 }
-
-# override with environment if any
-if (nchar(Sys.getenv("KBC_TOKEN")) > 0) {
-  KBC_TOKEN <- Sys.getenv("KBC_TOKEN")  
-}
-if (nchar(Sys.getenv("KBC_URL")) > 0) {
-  KBC_URL <- Sys.getenv("KBC_URL")  
+var <- Sys.getenv('KBC_TEST_URL')
+if (var == '') {
+    stop('KBC_TEST_URL environment variable is empty')
 }
 
 test_check("keboola.sapi.r.client")
+

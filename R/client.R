@@ -1,6 +1,6 @@
 #' Client for working with Keboola Connection Storage API.
 #'
-#' @import httr methods aws.s3
+#' @import httr methods aws.s3 AzureStor
 #' @exportClass SapiClient
 #' @export SapiClient
 SapiClient <- setRefClass(
@@ -8,13 +8,14 @@ SapiClient <- setRefClass(
     fields = list(
         token = 'character',
         url = 'character',
-        userAgent = 'character'
+        userAgent = 'character',
+        backend = 'character'
     ),
     methods = list(
         initialize = function(
                 token,
-                url = 'https://connection.keboola.com/v2/',
-                userAgent = "Keboola StorageApi R Client/v2"
+                url,
+                userAgent = "Keboola StorageApi R Client/v0.5"
         ) {
             "Constructor.
             \\subsection{Parameters}{\\itemize{
@@ -23,12 +24,14 @@ SapiClient <- setRefClass(
             }}
             \\subsection{Return Value}{Another return value}"          
             .self$token <<- token
-            .self$url <<- url
+            .self$url <<- paste0(trimws(url, whitespace = '/'), '/v2/')
             .self$userAgent <<- userAgent
+            options(azure_storage_progress_bar=FALSE)
             # check for token validity
             tryCatch(
             {  
                 vf <- .self$verifyToken()
+                .self$backend <<- vf$owner$fileStorageProvider
             }, error = function(e) {
                 stop("Invalid Access Token")
             })
@@ -54,12 +57,11 @@ SapiClient <- setRefClass(
             }
 
             # handle errors
-            if (!(response$status_code %in% c(200, 201))) {
+            if (!(response$status_code %in% c(200, 201, 202))) {
                 if ((class(body) == 'list') && !is.null(body$message)) {
                     stop(paste0("Error recieving response from sapi API: ", body$message))
                 } else if (class(body) == 'list') {
-                    str <- print(body)
-                    stop(paste0("Error recieving response from sapi API: ", str, response$status_code))
+                    stop(paste0("Error recieving response from sapi API: ", paste(body, collapse = ", "), "code: ", response$status_code))
                 } else if (class(body) == 'character') {
                     stop(paste0("Error recieving response from sapi API: ", body))
                 } else {
@@ -248,6 +250,33 @@ SapiClient <- setRefClass(
             }
         },
         
+        getAbsObject = function(key, fileInfo) {
+            "Get a file from the Abs storage
+            \\subsection{Parameters}{\\itemize{
+            \\item{\\code{key} Object Key to retrieve}
+            \\item{\\code{list} File info list object (see \\code{getFileInfo())}.}
+            }}
+            \\subsection{Return Value}{Data frame with file contents}"
+            # Sasconnection string comes in the following format:
+            # BlobEndpoint=https://kbcfshc7chguaeh2km.blob.core.windows.net;SharedAccessSignature=sv=2017-11-09&sr=c&st=2023-03-08T18:47:29Z&se=2023-03-09T06:47:29Z&sp=rwl&sig=aaaaaaaaaaa%3D
+            # We need to set containerUrl to https://kbcfshc7chguaeh2km.blob.core.windows.net + containerName
+            # and sas to the value of SharedAccessSignature, that is sv=2017-11-09&sr=c&...aaaaaaaaaaa%3D
+            connectionString <- fileInfo$absCredentials$SASConnectionString;
+            blobEndpoint <- strsplit(connectionString, ";")[[1]][1]
+            blobEndpointValue <- strsplit(blobEndpoint, "=")[[1]][2]
+            sharedAccessSignature <- strsplit(connectionString, ";")[[1]][2]
+            sharedAccessSignatureValue <- gsub("SharedAccessSignature=", "", sharedAccessSignature)
+            containerUrl = paste0(blobEndpointValue)
+            
+            container <- AzureStor::blob_container(
+                containerUrl,
+                sas=sharedAccessSignatureValue
+            )
+            
+            rawOutput <- AzureStor::download_blob(container, src=key, dest=NULL)
+            rawToChar(rawOutput)
+        },
+        
         getFileData = function(fileInfo) {
             "Get a file from the S3 storage
             \\subsection{Parameters}{\\itemize{
@@ -263,17 +292,30 @@ SapiClient <- setRefClass(
                     fullPath <- manifest$entries[[i]]$url
                     splittedPath <- strsplit(fullPath, "/")
                     fileKey <-  paste(splittedPath[[1]][4:length(splittedPath[[1]])], collapse = "/")
-                    stringData <- getS3Object(fileKey, fileInfo)
-                    stringOutput <- paste0(stringOutput, stringData)
+                    if (.self$backend == 'aws') {
+                        stringData <- .self$getS3Object(fileKey, fileInfo)
+                        stringOutput <- paste0(stringOutput, stringData)
+                    } else if (.self$backend == 'azure') {
+                        stringData <- .self$getAbsObject(fileKey, fileInfo)
+                        stringOutput <- paste0(stringOutput, stringData)
+                    } else {
+                        stop(paste("Unkown backend:", .self$backend))
+                    }
                 }
                 stringOutput
             } else {
-                .self$getS3Object(fileInfo$s3Path$key, fileInfo)
+                if (.self$backend == 'aws') {
+                    .self$getS3Object(fileInfo$s3Path$key, fileInfo)
+                } else if (.self$backend == 'azure') {
+                    .self$getAbsObject(paste(fileInfo$absPath$container, fileInfo$absPath$name, sep='/'), fileInfo)
+                } else {
+                    stop(paste("Unkown backend:", .self$backend))
+                }
             }    
         },
         
         uploadFile = function(dataFile, options = list()) {
-            "Upload a file to AWS S3 bucket.
+            "Upload a file to Storage files.
             (compression is not yet supported by this client)
             \\subsection{Parameters}{\\itemize{
             \\item{\\code{string} File to upload.}
@@ -299,20 +341,48 @@ SapiClient <- setRefClass(
                     stop(paste("preparing file upload warning recieved:", w$message))
                 }
             )
-    
+            if (.self$backend == 'azure') {
+                .self$uploadFileAzure(resp, dataFile)
+            } else if (.self$backend == 'aws') {
+                .self$uploadFileAws(resp, dataFile)
+            } else {
+                stop(paste("Invalid backend:", .self$backend));
+            }
+            # return the file id of the uploaded file
+            return(resp$id)
+        },
+        
+        uploadFileAzure = function(preparedFile, dataFile) {
+            # Sasconnection string comes in the following format:
+            # BlobEndpoint=https://kbcfshc7chguaeh2km.blob.core.windows.net;SharedAccessSignature=sv=2017-11-09&sr=c&st=2023-03-08T18:47:29Z&se=2023-03-09T06:47:29Z&sp=rwl&sig=o89P1pW04xbgRB7wrUFOq%2BLZRJxSu%2FIgcWt32B1P1os%3D
+            # We need to set containerUrl to https://kbcfshc7chguaeh2km.blob.core.windows.net + containerName
+            # and sas to the value of SharedAccessSignature, that is sv=2017-11-09&sr=c&...2BLZRJxSu%2FIgcWt32B1P1os%3D
+            connectionString <- preparedFile$absUploadParams$absCredentials$SASConnectionString;
+            blobEndpoint <- strsplit(connectionString, ";")[[1]][1]
+            blobEndpointValue <- strsplit(blobEndpoint, "=")[[1]][2]
+            sharedAccessSignature <- strsplit(connectionString, ";")[[1]][2]
+            sharedAccessSignatureValue <- gsub("SharedAccessSignature=", "", sharedAccessSignature)
+            containerUrl = paste0(blobEndpointValue, '/', preparedFile$absUploadParams$container)
+            
+            container <- AzureStor::blob_container(
+                containerUrl,
+                sas=sharedAccessSignatureValue
+            )
+            
+            result <- AzureStor::upload_blob(container, dataFile, dest=preparedFile$absUploadParams$blobName)
+        },
+        
+        uploadFileAws = function(preparedFile, dataFile) {
             # put the file to AWS
             aws.s3::put_object(
                 file = dataFile,
-                object = resp$uploadParams$key,
-                bucket = resp$uploadParams$bucket,
-                region = resp$region,
-                key = resp$uploadParams$credentials$AccessKeyId,
-                secret = resp$uploadParams$credentials$SecretAccessKey,
-                session_token = resp$uploadParams$credentials$SessionToken
+                object = preparedFile$uploadParams$key,
+                bucket = preparedFile$uploadParams$bucket,
+                region = preparedFile$region,
+                key = preparedFile$uploadParams$credentials$AccessKeyId,
+                secret = preparedFile$uploadParams$credentials$SecretAccessKey,
+                session_token = preparedFile$uploadParams$credentials$SessionToken
             )
-            
-            # return the file id of the uploaded file
-            return(resp$id)
         },
         
         saveTableAsync = function(bucket, tableName, fileId, opts = list()) {
@@ -367,9 +437,6 @@ SapiClient <- setRefClass(
             }}
             \\subsection{Return Value}{URL to ping for table creation status check.}"
             opts <- .self$prepareOptions(options)
-            if (!("federationToken" %in% names(opts))) {
-                opts$federationToken = 1
-            }
             response <- tryCatch(
                 {
                     httr::POST(
@@ -400,19 +467,7 @@ SapiClient <- setRefClass(
             fileId <- .self$uploadFile(fileName)
             # start writing job
             res <- .self$saveTableAsync(bucket, tableName, fileId, options)
-            if (!is.null(res$error)) {
-                stop(paste0('Cannot save table ', bucket, '.', tableName, ' error:', res$error, ' (', res$exceptionId, ')'))
-            }
-            repeat {
-                job <- .self$getJobStatus(res$url)
-                # check the job status
-                if (job$status == "success") {
-                    break
-                } else if (job$status != "waiting" && job$status != "processing") {
-                    stop(paste0("Job status: ", job$status, ' - ', job$error$message, ' (', job$error$exceptionId, ')'))
-                }
-                Sys.sleep(0.5)
-            }
+            job <- .self$waitForJob(res)
             # if we got this far the write was successful
             # remove temporary file
             file.remove(fileName)
@@ -421,6 +476,22 @@ SapiClient <- setRefClass(
             } else {
                 paste0(bucket, ".", tableName)
             }
+        },
+        
+        waitForJob = function(jobResponse) {
+            if (!is.null(jobResponse$error)) {
+                stop(paste("Request failed:", jobResponse$error))
+            }      
+            repeat {
+                job <- .self$getJobStatus(jobResponse$url)
+                if (job$status == "success") {
+                    break
+                } else if (job$status != "waiting" && job$status != "processing") {
+                    stop(paste0("Job status: ", job$status, ' - ', job$error$message, ' (', job$error$exceptionId, ')'))
+                }
+                Sys.sleep(0.5)
+            }
+            job
         },
         
         importTable = function(tableId, options = list()) {
@@ -433,18 +504,7 @@ SapiClient <- setRefClass(
             tryCatch(
                 {
                     res <- .self$importTableAsync(tableId, options = options)
-                    if (!is.null(res$error)) {
-                        stop(paste("Error retrieving table:",res$error))
-                    }      
-                    repeat {
-                        job <- .self$getJobStatus(res$url)
-                        if (job$status == "success") {
-                            break
-                        } else if (job$status != "waiting" && job$status != "processing") {
-                            stop(paste0("Job status: ", job$status, ' - ', job$error$message, ' (', job$error$exceptionId, ')'))
-                        }
-                        Sys.sleep(0.5)
-                    }
+                    job <- .self$waitForJob(res)
                     table <- .self$getTable(tableId)
                     if ("columns" %in% names(options)) {
                         columns <- options$columns
@@ -555,21 +615,19 @@ SapiClient <- setRefClass(
             .self$decodeResponse(resp)
         },
         
-        deleteBucket = function(bucketId) {
+        deleteBucket = function(bucketId, force = FALSE) {
             "Delete a bucket.
             \\subsection{Parameters}{\\itemize{
             \\item{\\code{bucketId} String ID of the bucket.}
+            \\item{\\code{force} Boolean to force deletion of tables in bucket.}
             }}
             \\subsection{Return Value}{TRUE}"
             resp <- httr::DELETE(
-                paste0(.self$url, "storage/buckets/", bucketId),
+                paste0(.self$url, "storage/buckets/", bucketId, '?force=', as.integer(force), '&async=1'),
                 httr::add_headers("X-StorageApi-Token" = .self$token)
             )
-            if (!(resp$status_code == 204)) {
-                stop(paste0(resp$status_code, " Error deleting bucket ", bucketId))
-            } else {
-                TRUE
-            }
+            .self$waitForJob(.self$decodeResponse(resp))
+            TRUE
         },
         
         deleteTable = function(tableId) {
@@ -864,16 +922,13 @@ SapiClient <- setRefClass(
             if (!is.null(backend)) {
                 postBody <- list(backend=backend) 
             }
-            tryCatch({
-                resp <- httr::POST(
-                    paste0(.self$url,"storage/workspaces"),
-                    httr::add_headers("X-StorageApi-Token" = .self$token),
-                    body = postBody
-                )    
-            }, error = function(e) {
-                stop(paste("Error creating workspace", e))
-            })
-            .self$decodeResponse(resp)
+            resp <- httr::POST(
+                paste0(.self$url,"storage/workspaces?async=1"),
+                httr::add_headers("X-StorageApi-Token" = .self$token),
+                body = postBody
+            )   
+            resp <- .self$waitForJob(.self$decodeResponse(resp))
+            resp$results
         },
         
         dropWorkspace = function(workspaceId) {
@@ -883,17 +938,11 @@ SapiClient <- setRefClass(
             }}
             \\subsection{Return Value}{TRUE}"
             resp <- httr::DELETE(
-                paste0(.self$url,"storage/workspaces/", workspaceId),
+                paste0(.self$url,"storage/workspaces/", workspaceId, '?async=1'),
                 httr::add_headers("X-StorageApi-Token" = .self$token)
             )
-            if (!(resp$status_code == 204)) {
-                stop(paste0(
-                    resp$status_code, 
-                    " Error deleting workspace: ", workspaceId, 
-                    ". Server Response: ", .self$decodeResponse(resp)))
-            } else {
-                TRUE
-            }
+            .self$waitForJob(.self$decodeResponse(resp))
+            TRUE
         },
         
         getWorkspace = function(workspaceId) {

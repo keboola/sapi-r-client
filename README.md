@@ -1,6 +1,6 @@
 # KBC Storage R Client
 
-[![Build Status](https://travis-ci.org/keboola/sapi-r-client.svg?branch=master)](https://travis-ci.org/keboola/sapi-r-client)
+[![GitHub Actions](https://github.com/keboola/sapi-r-client/actions/workflows/push.yml/badge.svg?branch=master)](https://github.com/keboola/sapi-r-client/actions/workflows/push.yml)
 
 Client for using [Keboola Connection Storage API](http://docs.keboola.apiary.io/). 
 This API client provides client methods to get data from KBC and put data back to KBC.
@@ -27,6 +27,7 @@ library("keboola.sapi.r.client")
 # create client
 client <- SapiClient$new(
     token = 'your-token'
+    url = 'https://connection.keboola.com'
 )
 
 # verify the token

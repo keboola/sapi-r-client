@@ -1,0 +1,41 @@
+name: GitHub Actions
+on: [ push ]
+concurrency: ci-${{ github.ref }} # to avoid tag collisions in the ECR
+env:
+  # Name of the image in the ECR
+  APP_IMAGE: sapi-r-client
+
+  # DockerHub login
+  DOCKERHUB_USER: "keboolabot"
+  DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+  KBC_TEST_URL_AWS: "https://connection.keboola.com"
+  KBC_TEST_URL_AZURE: "https://connection.north-europe.azure.keboola.com"
+  KBC_TEST_TOKEN_AWS: ${{ secrets.KBC_TEST_TOKEN_AWS }}
+  KBC_TEST_TOKEN_AZURE: ${{ secrets.KBC_TEST_TOKEN_AZURE }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      app_image_tag: ${{ steps.tag.outputs.app_image_tag }}
+      is_semantic_tag: ${{ steps.tag.outputs.is_semantic_tag }}
+    steps:
+      -
+        name: Check out the repo
+        uses: actions/checkout@v3
+      -
+        name: Print Docker version
+        run: docker -v
+      -
+        name: Docker login
+        if: env.DOCKERHUB_TOKEN
+        run: docker login --username "$DOCKERHUB_USER" --password "$DOCKERHUB_TOKEN"
+      -
+        name: Build image
+        run: docker build -t $APP_IMAGE .
+      -
+        name: Run tests AWS
+        run: docker run -e KBC_TEST_TOKEN=${KBC_TEST_TOKEN_AWS} -e KBC_TEST_URL=${KBC_TEST_URL_AWS} $APP_IMAGE /code/check.sh
+      -
+        name: Run tests Azure
+        run: docker run -e KBC_TEST_TOKEN=${KBC_TEST_TOKEN_AZURE} -e KBC_TEST_URL=${KBC_TEST_URL_AZURE} $APP_IMAGE /code/check.sh

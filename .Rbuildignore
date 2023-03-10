@@ -1,6 +1,7 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^\.git$
-^\.travis\.yml$
+^\.github$
+^\.dockerignore$
 ^Dockerfile$
 ^check\.sh$

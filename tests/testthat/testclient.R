@@ -46,12 +46,12 @@ test_that("verifyToken", {
 
     # verify credentials structure
     expect_false(is.null(tokenDetails$id))
-    expect_false(is.null(tokenDetails$token))
     expect_false(is.null(tokenDetails$description))
     expect_false(is.null(tokenDetails$uri))
     expect_false(is.null(tokenDetails$isMasterToken))
     expect_false(is.null(tokenDetails$bucketPermissions))
     expect_false(is.null(tokenDetails$owner))
+    expect_false(is.null(tokenDetails$owner$fileStorageProvider))
 })
 
 test_that("listBuckets", {
@@ -74,10 +74,7 @@ test_that("createAndDeleteMethods", {
   )
   # check if our testing table and bucket exist, if so remove them
   if (client$bucketExists("in.c-r_client_testing")) {
-    if (client$tableExists("in.c-r_client_testing.test_table")) {
-      client$deleteTable("in.c-r_client_testing.test_table")
-    }
-    client$deleteBucket("in.c-r_client_testing")
+    client$deleteBucket("in.c-r_client_testing", force = TRUE)
   }
   # make the bucket we will use for testing
   result <- createTestBucket(client)
@@ -122,10 +119,7 @@ test_that("oneRowTable", {
   )
   # check if our testing table and bucket exist, if so remove them
   if (client$bucketExists("in.c-r_client_testing")) {
-    if (client$tableExists("in.c-r_client_testing.test_table")) {
-      client$deleteTable("in.c-r_client_testing.test_table")
-    }
-    client$deleteBucket("in.c-r_client_testing")
+    client$deleteBucket("in.c-r_client_testing", force = TRUE)
   }
   # make the bucket we will use for testing
   result <- createTestBucket(client)
@@ -160,10 +154,7 @@ test_that("emptyRowTable", {
   )
   # check if our testing table and bucket exist, if so remove them
   if (client$bucketExists("in.c-r_client_testing")) {
-    if (client$tableExists("in.c-r_client_testing.test_table")) {
-      client$deleteTable("in.c-r_client_testing.test_table")
-    }
-    client$deleteBucket("in.c-r_client_testing")
+    client$deleteBucket("in.c-r_client_testing", force = TRUE)
   }
   # make the bucket we will use for testing
   result <- createTestBucket(client)
@@ -197,10 +188,7 @@ test_that("writeToNonExisingBucket", {
   )
   # check if our testing table and bucket exist, if so remove them
   if (client$bucketExists("in.c-r_client_testing")) {
-    if (client$tableExists("in.c-r_client_testing.test_table")) {
-      client$deleteTable("in.c-r_client_testing.test_table")
-    }
-    client$deleteBucket("in.c-r_client_testing")
+    client$deleteBucket("in.c-r_client_testing", force = TRUE)
   }
   # make the bucket we will use for testing
   result <- createTestBucket(client)
@@ -321,10 +309,7 @@ test_that("incremental_load", {
     )
     # check if our testing table and bucket exist, if so remove them
     if (client$bucketExists("in.c-r_client_testing")) {
-        if (client$tableExists("in.c-r_client_testing.test_table")) {
-            client$deleteTable("in.c-r_client_testing.test_table")
-        }
-        client$deleteBucket("in.c-r_client_testing")
+        client$deleteBucket("in.c-r_client_testing", force = TRUE)
     }
     # make the bucket we will use for testing
     result <- createTestBucket(client)

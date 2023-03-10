@@ -75,3 +75,7 @@ client$deleteFile(newFileId)
 ```
 
 The only required argument to create a client is a valid Storage API token and API URL.
+
+## License
+
+MIT licensed, see [LICENSE](./LICENSE) file.
